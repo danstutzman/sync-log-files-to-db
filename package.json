@@ -8,9 +8,13 @@
     "bluebird": "^3.5.0",
     "gm": "^1.23.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "flow-bin": "^0.44.0",
+    "flow-remove-types": "^1.2.0"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "flow": "flow",
+    "run": "flow-remove-types create-role.js -o out.js && node out.js"
   },
   "author": "Dan Stutzman",
   "license": "All rights reserved"

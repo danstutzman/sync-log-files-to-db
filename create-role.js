@@ -1,3 +1,4 @@
+// @flow
 const AWS     = require('aws-sdk')
 const fs      = require('fs')
 const Promise = require('bluebird')
@@ -5,21 +6,21 @@ const Promise = require('bluebird')
 AWS.config.loadFromPath('./config.json');
 
 // Returns Promise with ARN
-function createIamRoleIdempotent(roleName) {
-  return getArnForIamRole(roleName).catch(function(err) {
-    if (err) {
+function createIamRoleIdempotent(roleName:string) {
+  return new Promise(function(resolve, reject) {
+    getArnForIamRole(roleName).then(function(arn) {
+      resolve(arn)
+    }).catch(function(err) {
       if (err.code === 'NoSuchEntity') {
         resolve(createIamRoleNonIdempotent(roleName))
       } else {
         reject(err)
       }
-    } else {
-      resolve(arn)
-    }
+    })
   })
 }
 
-function getArnForIamRole(roleName) {
+function getArnForIamRole(roleName:string) {
   return new Promise(function(resolve, reject) {
     console.log(`Requesting IAM.getRole for role name '${roleName}'...`)
     new AWS.IAM().getRole({
@@ -28,15 +29,19 @@ function getArnForIamRole(roleName) {
       if (err) {
         reject(err)
       } else {
-        const arn = data['Role']['Arn']
-        resolve(arn)
+        if (data && data['Role']) {
+          const arn = data['Role']['Arn']
+          resolve(arn)
+        } else {
+          reject(`Bad data from getRole: ${JSON.stringify(data)}`)
+        }
       }
     })
   })
 }
 
 // Returns Promise with ARN
-function createIamRoleNonIdempotent(roleName) {
+function createIamRoleNonIdempotent(roleName:string) {
   return new Promise(function(resolve, reject) {
     console.log(`Requesting IAM.createRole for role name '${roleName}'...`)
     new AWS.IAM().createRole({
@@ -66,8 +71,8 @@ function createIamRoleNonIdempotent(roleName) {
 }
 
 // Returns promise with no data
-function putRolePolicyIdempotent(roleName, lambdaExecutionAccessPolicyName,
-    sourceBucket, targetBucket) {
+function putRolePolicyIdempotent(roleName:string,
+    lambdaExecutionAccessPolicyName:string, sourceBucket:string, targetBucket:string) {
   return new Promise(function(resolve, reject) {
     console.log(`Requesting IAM.putRolePolicy for role name '${roleName}'...`)
     new AWS.IAM().putRolePolicy({
@@ -111,7 +116,7 @@ function putRolePolicyIdempotent(roleName, lambdaExecutionAccessPolicyName,
 
 
 // TODO: remove dependency on CreateThumbnail.zip
-function createFunction(functionName, executionRoleArn) {
+function createFunction(functionName:string, executionRoleArn:string) {
   return new Promise(function(resolve, reject) {
     console.log(`Requesting Lambda.createFunction for name '${functionName}'...`)
     new AWS.Lambda().createFunction({
@@ -133,7 +138,7 @@ function createFunction(functionName, executionRoleArn) {
   })
 }
 
-function createFunctionIdempotent(functionName, executionRoleArn) {
+function createFunctionIdempotent(functionName:string, executionRoleArn:string) {
   return new Promise(function(resolve, reject) {
     console.log(
       `Requesting Lambda.listVersionsByFunction for name '${functionName}'...`)
