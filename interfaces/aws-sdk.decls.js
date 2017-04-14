@@ -97,6 +97,8 @@ declare module 'aws-sdk' {
     systemClockOffset?: number;
     signatureVersion?: string;
     signatureCache?: boolean;
+
+    loadFromPath(path: string): void;
   }
 
   declare var config: Config;
