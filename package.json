@@ -1,0 +1,17 @@
+{
+  "name": "sync-cloudfront-logs-to-bigquery",
+  "version": "0.0.1",
+  "description": "",
+  "dependencies": {
+    "async": "^2.3.0",
+    "aws-sdk": "^2.41.0",
+    "bluebird": "^3.5.0",
+    "gm": "^1.23.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Dan Stutzman",
+  "license": "All rights reserved"
+}
