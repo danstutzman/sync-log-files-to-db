@@ -5,6 +5,13 @@ const Promise = require('bluebird')
 
 AWS.config.loadFromPath('./config.json');
 
+const SOURCE_BUCKET = 'danstutzman-lambda-example'
+const TARGET_BUCKET = `${SOURCE_BUCKET}resized`
+const FUNCTION_NAME = 'CreateThumbnail'
+const EXECUTION_ROLE_NAME = `lambda-${FUNCTION_NAME}-execution`
+const EXECUTION_POLICY_NAME = `lambda-${FUNCTION_NAME}-execution-access`
+const ROLE_WAIT_SECONDS = 8
+
 // Returns Promise with ARN
 function createIamRoleIdempotent(roleName:string) {
   return new Promise(function(resolve, reject) {
@@ -286,11 +293,6 @@ function addPermission(functionName:string, sourceBucket:string) {
   })
 }
 
-const SOURCE_BUCKET = 'danstutzman-lambda-example'
-const TARGET_BUCKET = `${SOURCE_BUCKET}resized`
-const FUNCTION_NAME = 'CreateThumbnail'
-const EXECUTION_ROLE_NAME = `lambda-${FUNCTION_NAME}-execution`
-const EXECUTION_POLICY_NAME = `lambda-${FUNCTION_NAME}-execution-access`
 function deleteFunction(functionName:string, ignoreIfNotExists:bool) {
   return new Promise(function(resolve, reject) {
     console.log(`Requesting Lambda.deleteFunction for '${functionName}'...`)
@@ -349,18 +351,6 @@ function deleteRolePolicy(roleName:string, policyName:string, ignoreIfNotExists:
   })
 }
 
-createIamRoleIdempotent(EXECUTION_ROLE_NAME).then(function(executionRoleArn) {
-  putRolePolicyIdempotent(EXECUTION_ROLE_NAME, EXECUTION_POLICY_NAME, SOURCE_BUCKET,
-      TARGET_BUCKET).then(function() {
-    createFunctionIdempotent(FUNCTION_NAME, executionRoleArn)
-        .then(function(functionArn) {
-      addPermission(FUNCTION_NAME, SOURCE_BUCKET).then(function() {
-        putBucketNotification(SOURCE_BUCKET, functionArn).then(function() {
-          console.log('put bucket notification')
-        })
-      })
-      invokeFunction(FUNCTION_NAME, SOURCE_BUCKET).then(function(logText) {
-        console.log('invoke', logText)
 if (false) {
   deleteFunction(FUNCTION_NAME, true).then(function() {
     deleteRolePolicy(EXECUTION_ROLE_NAME, EXECUTION_POLICY_NAME, true)
@@ -370,6 +360,28 @@ if (false) {
       })
     })
   })
-}).catch(function(err) {
-  console.error('Error', err)
-})
+}
+if (true) {
+  createIamRoleIdempotent(EXECUTION_ROLE_NAME).then(function(executionRoleArn) {
+    console.log('Wait %d seconds for role to be created...', ROLE_WAIT_SECONDS)
+    setTimeout(function() {
+      putRolePolicyIdempotent(EXECUTION_ROLE_NAME, EXECUTION_POLICY_NAME,
+          SOURCE_BUCKET, TARGET_BUCKET).then(function() {
+        createFunctionIdempotent(FUNCTION_NAME, executionRoleArn)
+            .then(function(functionArn) {
+          console.log('executionRoleArn', executionRoleArn)
+          addPermission(FUNCTION_NAME, SOURCE_BUCKET).then(function() {
+            putBucketNotification(SOURCE_BUCKET, functionArn).then(function() {
+              console.log('put bucket notification')
+              invokeFunction(FUNCTION_NAME, SOURCE_BUCKET).then(function(logText) {
+                console.log('invoke', logText)
+              })
+            })
+          })
+        })
+      })
+    }, ROLE_WAIT_SECONDS * 1000)
+  }).catch(function(err) {
+    console.error('Error', err)
+  })
+}
