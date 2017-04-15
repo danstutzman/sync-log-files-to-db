@@ -164,7 +164,7 @@ function createFunctionIdempotent(functionName:string, executionRoleArn:string) 
           let functionArn;
           for (const version of (data.Versions:any)) {
             if (version.Version === '$LATEST') {
-              functionArn = version['FunctionArn']
+              functionArn = version['FunctionArn'].replace(/:\$LATEST$/, '')
             }
           }
           if (functionArn) {
@@ -241,7 +241,7 @@ function invokeFunction(functionName:string, sourceBucket:string) {
 }
 
 function putBucketNotification(sourceBucket:string, functionArn:string) {
-  const functionArnWithoutVersion = functionArn.split(':').slice(0, -1).join(':')
+  console.log('functionArn', functionArn)
   return new Promise(function(resolve, reject) {
     console.log(`Requesting Lambda.putBucketNotification...`)
     new AWS.S3().putBucketNotification({
@@ -249,7 +249,7 @@ function putBucketNotification(sourceBucket:string, functionArn:string) {
       NotificationConfiguration: {
         CloudFunctionConfiguration: {
           Event: "s3:ObjectCreated:*",
-          CloudFunction: functionArnWithoutVersion,
+          CloudFunction: functionArn,
           Id: "CreateThumbnailStartingEvent",
         }
       },
