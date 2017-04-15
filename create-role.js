@@ -291,6 +291,63 @@ const TARGET_BUCKET = `${SOURCE_BUCKET}resized`
 const FUNCTION_NAME = 'CreateThumbnail'
 const EXECUTION_ROLE_NAME = `lambda-${FUNCTION_NAME}-execution`
 const EXECUTION_POLICY_NAME = `lambda-${FUNCTION_NAME}-execution-access`
+function deleteFunction(functionName:string, ignoreIfNotExists:bool) {
+  return new Promise(function(resolve, reject) {
+    console.log(`Requesting Lambda.deleteFunction for '${functionName}'...`)
+    new AWS.Lambda().deleteFunction({
+      FunctionName: functionName,
+    }, function(err, data) {
+      if (err) {
+        if (ignoreIfNotExists && err.code === 'ResourceNotFoundException') {
+          resolve()
+        } else {
+          reject(err)
+        }
+      } else {
+        resolve()
+      }
+    })
+  })
+}
+
+function deleteRole(roleName:string, ignoreIfNotExists:bool) {
+  return new Promise(function(resolve, reject) {
+    console.log(`Requesting IAM.deleteRole for '${roleName}'...`)
+    new AWS.IAM().deleteRole({
+      RoleName: roleName,
+    }, function(err, data) {
+      if (err) {
+        if (ignoreIfNotExists && err.code == 'NoSuchEntity') {
+          resolve()
+        } else {
+          reject(err)
+        }
+      } else {
+        resolve()
+      }
+    })
+  })
+}
+
+function deleteRolePolicy(roleName:string, policyName:string, ignoreIfNotExists:bool) {
+  return new Promise(function(resolve, reject) {
+    console.log(`Requesting IAM.deleteRolePolicy for '${policyName}'...`)
+    new AWS.IAM().deleteRolePolicy({
+      RoleName: roleName,
+      PolicyName: policyName,
+    }, function(err, data) {
+      if (err) {
+        if (ignoreIfNotExists && err.code === 'NoSuchEntity') {
+          resolve()
+        } else {
+          reject(err)
+        }
+      } else {
+        resolve()
+      }
+    })
+  })
+}
 
 createIamRoleIdempotent(EXECUTION_ROLE_NAME).then(function(executionRoleArn) {
   putRolePolicyIdempotent(EXECUTION_ROLE_NAME, EXECUTION_POLICY_NAME, SOURCE_BUCKET,
@@ -304,6 +361,12 @@ createIamRoleIdempotent(EXECUTION_ROLE_NAME).then(function(executionRoleArn) {
       })
       invokeFunction(FUNCTION_NAME, SOURCE_BUCKET).then(function(logText) {
         console.log('invoke', logText)
+if (false) {
+  deleteFunction(FUNCTION_NAME, true).then(function() {
+    deleteRolePolicy(EXECUTION_ROLE_NAME, EXECUTION_POLICY_NAME, true)
+        .then(function() {
+      deleteRole(EXECUTION_ROLE_NAME, true).then(function() {
+        console.log('deleted')
       })
     })
   })
