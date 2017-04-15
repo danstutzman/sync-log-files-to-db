@@ -14,7 +14,7 @@
   },
   "scripts": {
     "flow": "flow",
-    "run": "flow-remove-types create-role.js -o out.js && node out.js"
+    "run": "flow && flow-remove-types create-role.js -o out.js && node out.js"
   },
   "author": "Dan Stutzman",
   "license": "All rights reserved"
