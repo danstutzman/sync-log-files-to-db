@@ -159,6 +159,67 @@ function createFunctionIdempotent(functionName:string, executionRoleArn:string) 
   })
 }
 
+function invokeFunction(functionName:string, sourceBucket:string) {
+  return new Promise(function(resolve, reject) {
+    console.log(
+      `Requesting Lambda.invokeFunction for name '${functionName}'...`)
+    new AWS.Lambda().invoke({
+      FunctionName: functionName,
+      InvocationType: 'RequestResponse',
+      LogType: 'Tail',
+      Payload: JSON.stringify({
+        "Records":[
+          {
+             "eventVersion":"2.0",
+             "eventSource":"aws:s3",
+             "awsRegion":"us-east-1",
+             "eventTime":"1970-01-01T00:00:00.000Z",
+             "eventName":"ObjectCreated:Put",
+             "userIdentity":{
+                "principalId":"AIDAJDPLRKLG7UEXAMPLE"
+             },
+             "requestParameters":{
+                "sourceIPAddress":"127.0.0.1"
+             },
+             "responseElements":{
+                "x-amz-request-id":"C3D13FE58DE4C810",
+                "x-amz-id-2":"FMyUVURIY8/IgAtTv8xRjskZQpcIZ9KG4V5Wp6S7S/JRWeUWerMUE5JgHvANOjpD"
+             },
+             "s3":{
+                "s3SchemaVersion":"1.0",
+                "configurationId":"testConfigRule",
+                "bucket":{
+                   "name":sourceBucket,
+                   "ownerIdentity":{
+                      "principalId":"A3NL1KOZZKExample"
+                   },
+                   "arn":`arn:aws:s3:::${sourceBucket}`
+                },
+                "object":{
+                   "key":"HappyFace.jpg",
+                   "size":1024,
+                   "eTag":"d41d8cd98f00b204e9800998ecf8427e",
+                   "versionId":"096fKKXTRTtl3on89fVO.nfljtsv6qko"
+                }
+             }
+          }
+        ]
+      }),
+    }, function(err, data) {
+      if (err) {
+        reject(err)
+      } else {
+        if (data && data['LogResult']) {
+          const base64LogText = data['LogResult']
+          resolve(Buffer.from(base64LogText, 'base64').toString())
+        } else {
+          reject(`Unexpected response from invokeFunction: ${JSON.stringify(data)}`)
+        }
+      }
+    })
+  })
+}
+
 const SOURCE_BUCKET = 'danstutzman-lambda-example'
 const TARGET_BUCKET = `${SOURCE_BUCKET}resized`
 const FUNCTION_NAME = 'CreateThumbnail'
@@ -168,8 +229,11 @@ const EXECUTION_POLICY_NAME = `lambda-${FUNCTION_NAME}-execution-access`
 createIamRoleIdempotent(EXECUTION_ROLE_NAME).then(function(executionRoleArn) {
   putRolePolicyIdempotent(EXECUTION_ROLE_NAME, EXECUTION_POLICY_NAME, SOURCE_BUCKET,
       TARGET_BUCKET).then(function() {
-    createFunctionIdempotent(FUNCTION_NAME, executionRoleArn).then(function(data) {
-      console.log('createdFunction', data)
+    //createFunctionIdempotent(FUNCTION_NAME, executionRoleArn).then(function(data) {
+    //  console.log('createdFunction', data)
+    //})
+    invokeFunction(FUNCTION_NAME, SOURCE_BUCKET).then(function(logText) {
+      console.log('invoke', logText)
     })
   })
 }).catch(function(err) {
