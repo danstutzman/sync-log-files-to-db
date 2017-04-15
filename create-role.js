@@ -58,7 +58,7 @@ function createIamRoleNonIdempotent(roleName:string) {
           }
         ]
       }),
-      Path: "/", 
+      Path: "/",
       RoleName: roleName,
     }, function(err, data) {
       if (err) {
