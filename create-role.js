@@ -132,12 +132,18 @@ function createFunction(functionName:string, executionRoleArn:string) {
       if (err) {
         reject(err)
       } else {
-        resolve(data)
+        if (data && data['FunctionArn']) {
+          resolve(data['FunctionArn'])
+        } else {
+          throw new Error(`Couldn't find functionArn in result from createFunction: ${
+            JSON.stringify(data)}`)
+        }
       }
     })
   })
 }
 
+// Returns Promise with functionArn as data
 function createFunctionIdempotent(functionName:string, executionRoleArn:string) {
   return new Promise(function(resolve, reject) {
     console.log(
@@ -152,8 +158,22 @@ function createFunctionIdempotent(functionName:string, executionRoleArn:string) 
           reject(err)
         }
       } else {
-        console.log('got data', data)
-        resolve(data)
+        if (!data || !data.Versions) {
+          reject(`Couldn't find Versions in: ${JSON.stringify(data)}`)
+        } else {
+          let functionArn;
+          for (const version of (data.Versions:any)) {
+            if (version.Version === '$LATEST') {
+              functionArn = version['FunctionArn']
+            }
+          }
+          if (functionArn) {
+            resolve(functionArn)
+          } else {
+            reject(
+              `Couldn't find functionArn in versions: ${JSON.stringify(data)}`)
+          }
+        }
       }
     })
   })
