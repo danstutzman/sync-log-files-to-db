@@ -240,6 +240,52 @@ function invokeFunction(functionName:string, sourceBucket:string) {
   })
 }
 
+function putBucketNotification(sourceBucket:string, functionArn:string) {
+  const functionArnWithoutVersion = functionArn.split(':').slice(0, -1).join(':')
+  return new Promise(function(resolve, reject) {
+    console.log(`Requesting Lambda.putBucketNotification...`)
+    new AWS.S3().putBucketNotification({
+      Bucket: sourceBucket,
+      NotificationConfiguration: {
+        CloudFunctionConfiguration: {
+          Event: "s3:ObjectCreated:*",
+          CloudFunction: functionArnWithoutVersion,
+          Id: "CreateThumbnailStartingEvent",
+        }
+      },
+    }, function(err, data) {
+      if (err) {
+        reject(JSON.stringify(err))
+      } else {
+        resolve()
+      }
+    })
+  })
+}
+
+function addPermission(functionName:string, sourceBucket:string) {
+  return new Promise(function(resolve, reject) {
+    console.log(`Requesting Lambda.addPermission...`)
+    new AWS.Lambda().addPermission({
+      FunctionName: functionName,
+      Action: 'lambda:InvokeFunction',
+      Principal: 's3.amazonaws.com',
+      StatementId: 'some-unique-id',
+      SourceArn: `arn:aws:s3:::${sourceBucket}`,
+    }, function(err, data) {
+      if (err) {
+        if (err.code === 'ResourceConflictException') { // already exists, so ignore
+          resolve()
+        } else {
+          reject(err)
+        }
+      } else {
+        resolve()
+      }
+    })
+  })
+}
+
 const SOURCE_BUCKET = 'danstutzman-lambda-example'
 const TARGET_BUCKET = `${SOURCE_BUCKET}resized`
 const FUNCTION_NAME = 'CreateThumbnail'
@@ -249,11 +295,16 @@ const EXECUTION_POLICY_NAME = `lambda-${FUNCTION_NAME}-execution-access`
 createIamRoleIdempotent(EXECUTION_ROLE_NAME).then(function(executionRoleArn) {
   putRolePolicyIdempotent(EXECUTION_ROLE_NAME, EXECUTION_POLICY_NAME, SOURCE_BUCKET,
       TARGET_BUCKET).then(function() {
-    //createFunctionIdempotent(FUNCTION_NAME, executionRoleArn).then(function(data) {
-    //  console.log('createdFunction', data)
-    //})
-    invokeFunction(FUNCTION_NAME, SOURCE_BUCKET).then(function(logText) {
-      console.log('invoke', logText)
+    createFunctionIdempotent(FUNCTION_NAME, executionRoleArn)
+        .then(function(functionArn) {
+      addPermission(FUNCTION_NAME, SOURCE_BUCKET).then(function() {
+        putBucketNotification(SOURCE_BUCKET, functionArn).then(function() {
+          console.log('put bucket notification')
+        })
+      })
+      invokeFunction(FUNCTION_NAME, SOURCE_BUCKET).then(function(logText) {
+        console.log('invoke', logText)
+      })
     })
   })
 }).catch(function(err) {
