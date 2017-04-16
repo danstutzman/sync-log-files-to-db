@@ -1,7 +1,12 @@
-/config.json
-/node_modules
-/HappyFace.jpg
-/CreateThumbnail.zip
+/deployed/build
+/deployed/node_modules
+/deployed/CreateThumbnail.zip
+
+/deployer/build
+/deployer/config.json
+/deployer/node_modules
+
 /CreateThumbnail-data.json
-/out.js
+/HappyFace.jpg
+
 .*.swp

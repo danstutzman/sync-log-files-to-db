@@ -1,7 +1,8 @@
 // @flow
-const AWS     = require('aws-sdk')
-const fs      = require('fs')
-const Promise = require('bluebird')
+const AWS      = require('aws-sdk')
+const execSync = require('child_process').execSync
+const fs       = require('fs')
+const Promise  = require('bluebird')
 
 AWS.config.loadFromPath('./config.json');
 
@@ -19,7 +20,10 @@ function createIamRoleIdempotent(roleName:string) {
       resolve(arn)
     }).catch(function(err) {
       if (err.code === 'NoSuchEntity') {
-        resolve(createIamRoleNonIdempotent(roleName))
+        console.log('Wait %d seconds for role to be created...', ROLE_WAIT_SECONDS)
+        setTimeout(function() {
+          resolve(createIamRoleNonIdempotent(roleName))
+        }, ROLE_WAIT_SECONDS * 1000)
       } else {
         reject(err)
       }
@@ -124,6 +128,10 @@ function putRolePolicyIdempotent(roleName:string,
 
 // TODO: remove dependency on CreateThumbnail.zip
 function createFunction(functionName:string, executionRoleArn:string) {
+
+  if (false) {
+
+    /*
   return new Promise(function(resolve, reject) {
     console.log(`Requesting Lambda.createFunction for name '${functionName}'...`)
     new AWS.Lambda().createFunction({
@@ -132,7 +140,7 @@ function createFunction(functionName:string, executionRoleArn:string) {
       Timeout: 30,
       Runtime: 'nodejs4.3',
       Code: {
-        ZipFile: fs.readFileSync('CreateThumbnail.zip'),
+        ZipFile: fs.readFileSync('../deployed/build/CreateThumbnail.zip'),
       },
       Handler: `${FUNCTION_NAME}.handler`,
     }, function(err, data) {
@@ -148,10 +156,23 @@ function createFunction(functionName:string, executionRoleArn:string) {
       }
     })
   })
+  */
+}
 }
 
 // Returns Promise with functionArn as data
 function createFunctionIdempotent(functionName:string, executionRoleArn:string) {
+  return new Promise(function(resolve, reject) {
+    const gitSha1 = execSync('git rev-parse HEAD').toString().trim()
+    if (!fs.existsSync(`../deployed/build/${gitSha1}.zip`)) {
+      const zipCommand = `cd ../deployed && npm install && mkdir -p build &&
+        zip -r -q build/${gitSha1}.zip src/CreateThumbnail.js node_modules`
+      console.log(`Executing ${zipCommand}...`)
+      console.log(execSync(zipCommand).toString())
+    }
+    reject()
+  })
+  /*
   return new Promise(function(resolve, reject) {
     console.log(
       `Requesting Lambda.listVersionsByFunction for name '${functionName}'...`)
@@ -184,6 +205,7 @@ function createFunctionIdempotent(functionName:string, executionRoleArn:string) 
       }
     })
   })
+  */
 }
 
 function invokeFunction(functionName:string, sourceBucket:string) {
@@ -363,25 +385,57 @@ if (false) {
 }
 if (true) {
   createIamRoleIdempotent(EXECUTION_ROLE_NAME).then(function(executionRoleArn) {
-    console.log('Wait %d seconds for role to be created...', ROLE_WAIT_SECONDS)
-    setTimeout(function() {
-      putRolePolicyIdempotent(EXECUTION_ROLE_NAME, EXECUTION_POLICY_NAME,
-          SOURCE_BUCKET, TARGET_BUCKET).then(function() {
-        createFunctionIdempotent(FUNCTION_NAME, executionRoleArn)
-            .then(function(functionArn) {
-          console.log('executionRoleArn', executionRoleArn)
-          addPermission(FUNCTION_NAME, SOURCE_BUCKET).then(function() {
-            putBucketNotification(SOURCE_BUCKET, functionArn).then(function() {
-              console.log('put bucket notification')
-              invokeFunction(FUNCTION_NAME, SOURCE_BUCKET).then(function(logText) {
-                console.log('invoke', logText)
-              })
+    putRolePolicyIdempotent(EXECUTION_ROLE_NAME, EXECUTION_POLICY_NAME,
+        SOURCE_BUCKET, TARGET_BUCKET).then(function() {
+      createFunctionIdempotent(FUNCTION_NAME, executionRoleArn)
+          .then(function(functionArn) {
+        console.log('executionRoleArn', executionRoleArn)
+        addPermission(FUNCTION_NAME, SOURCE_BUCKET).then(function() {
+          putBucketNotification(SOURCE_BUCKET, functionArn).then(function() {
+            console.log('put bucket notification')
+            invokeFunction(FUNCTION_NAME, SOURCE_BUCKET).then(function(logText) {
+              console.log('invoke', logText)
             })
           })
         })
       })
-    }, ROLE_WAIT_SECONDS * 1000)
+    })
   }).catch(function(err) {
     console.error('Error', err)
   })
 }
+
+/*
+var crypto = require('crypto');
+var path = require('path');
+var lambda = new AWS.Lambda({
+      region: 'us-west-2'
+});
+var filePath = path.resolve(__dirname, 'CreateThumbnail.zip');
+
+new AWS.Lambda().getFunction({
+      FunctionName: FUNCTION_NAME,
+}, function (error, data) {
+      if (error) {
+                console.error(error);
+                return process.exit(1);
+            }
+      var lambdaSha256 = (data:any).Configuration.CodeSha256;
+
+      var shasum = crypto.createHash('sha256');
+      fs.createReadStream(filePath)
+      .on("data", function (chunk) {
+                shasum.update(chunk);
+            })
+      .on("end", function () {
+                var sha256 = shasum.digest('base64');
+                console.log('sha256', sha256, 'on lambda:', lambdaSha256)
+                if (sha256 === lambdaSha256) {
+                              console.log("No need to upload, sha hashes are the same");
+                          } else {
+                                        console.log("That needs to be uploaded again son.")
+                                    }
+                process.exit();
+            });
+});
+*/

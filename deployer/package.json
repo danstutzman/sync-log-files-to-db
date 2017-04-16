@@ -1,12 +1,10 @@
 {
-  "name": "sync-cloudfront-logs-to-bigquery",
+  "name": "sync-cloudfront-logs-to-bigquery-deployer",
   "version": "0.0.1",
   "description": "",
   "dependencies": {
-    "async": "^2.3.0",
     "aws-sdk": "^2.41.0",
-    "bluebird": "^3.5.0",
-    "gm": "^1.23.0"
+    "bluebird": "^3.5.0"
   },
   "devDependencies": {
     "flow-bin": "^0.44.0",
@@ -14,7 +12,7 @@
   },
   "scripts": {
     "flow": "flow",
-    "run": "flow && flow-remove-types create-role.js -o out.js && node out.js"
+    "run": "flow && mkdir -p build && flow-remove-types src/create-role.js -o build/create-role.js && node build/create-role.js"
   },
   "author": "Dan Stutzman",
   "license": "All rights reserved"
