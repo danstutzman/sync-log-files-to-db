@@ -1,17 +1,24 @@
 // @flow
 const AWS      = require('aws-sdk')
+const crypto   = require('crypto')
 const execSync = require('child_process').execSync
 const fs       = require('fs')
 const Promise  = require('bluebird')
 
 AWS.config.loadFromPath('./config.json');
+const Lambda = new AWS.Lambda({
+  apiVersion: '2015-03-31',
+})
+const S3 = new AWS.S3({
+  apiVersion: '2006-03-01',
+})
 
 const SOURCE_BUCKET = 'danstutzman-lambda-example'
 const TARGET_BUCKET = `${SOURCE_BUCKET}resized`
 const FUNCTION_NAME = 'CreateThumbnail'
 const EXECUTION_ROLE_NAME = `lambda-${FUNCTION_NAME}-execution`
 const EXECUTION_POLICY_NAME = `lambda-${FUNCTION_NAME}-execution-access`
-const ROLE_WAIT_SECONDS = 8
+const ROLE_POLICY_WAIT_SECONDS = 8
 
 // Returns Promise with ARN
 function createIamRoleIdempotent(roleName:string) {
@@ -20,10 +27,7 @@ function createIamRoleIdempotent(roleName:string) {
       resolve(arn)
     }).catch(function(err) {
       if (err.code === 'NoSuchEntity') {
-        console.log('Wait %d seconds for role to be created...', ROLE_WAIT_SECONDS)
-        setTimeout(function() {
-          resolve(createIamRoleNonIdempotent(roleName))
-        }, ROLE_WAIT_SECONDS * 1000)
+        resolve(createIamRoleNonIdempotent(roleName))
       } else {
         reject(err)
       }
@@ -119,7 +123,11 @@ function putRolePolicyIdempotent(roleName:string,
       if (err) {
         reject(err)
       } else {
-        resolve()
+        console.log('Wait %d seconds for role policy to take effect...',
+          ROLE_POLICY_WAIT_SECONDS)
+        setTimeout(function() {
+          resolve()
+        }, ROLE_POLICY_WAIT_SECONDS * 1000)
       }
     })
   })
@@ -127,20 +135,18 @@ function putRolePolicyIdempotent(roleName:string,
 
 
 // TODO: remove dependency on CreateThumbnail.zip
-function createFunction(functionName:string, executionRoleArn:string) {
-
-  if (false) {
-
-    /*
+function createFunction(functionName:string, executionRoleArn:string, zipPath:string) {
   return new Promise(function(resolve, reject) {
-    console.log(`Requesting Lambda.createFunction for name '${functionName}'...`)
-    new AWS.Lambda().createFunction({
+    console.log(`Requesting Lambda.createFunction for name '${functionName}' for executionRoleArn ${executionRoleArn}...`)
+    Lambda.createFunction({
       FunctionName: functionName,
+      Description: zipPath,
+      Publish: true,
       Role: executionRoleArn,
       Timeout: 30,
       Runtime: 'nodejs4.3',
       Code: {
-        ZipFile: fs.readFileSync('../deployed/build/CreateThumbnail.zip'),
+        ZipFile: fs.readFileSync(zipPath),
       },
       Handler: `${FUNCTION_NAME}.handler`,
     }, function(err, data) {
@@ -150,69 +156,90 @@ function createFunction(functionName:string, executionRoleArn:string) {
         if (data && data['FunctionArn']) {
           resolve(data['FunctionArn'])
         } else {
-          throw new Error(`Couldn't find functionArn in result from createFunction: ${
+          throw new Error(
+            `Couldn't find functionArn in result from createFunction: ${
             JSON.stringify(data)}`)
         }
       }
-    })
-  })
-  */
+    }) // end createFunction
+  }) // end promise
 }
+
+// Returns Promise with Base64 of SHA256 of contents of file
+function sha256Base64OfPath(path:string) {
+  return new Promise(function(resolve, reject) {
+    const sha256 = crypto.createHash('sha256')
+    fs.createReadStream(path)
+      .on('data', function (chunk) {
+        sha256.update(chunk);
+      })
+      .on('end', function () {
+        const sha256Base64 = sha256.digest('base64')
+        resolve(sha256Base64)
+      })
+  })
 }
 
 // Returns Promise with functionArn as data
 function createFunctionIdempotent(functionName:string, executionRoleArn:string) {
   return new Promise(function(resolve, reject) {
-    const gitSha1 = execSync('git rev-parse HEAD').toString().trim()
-    if (!fs.existsSync(`../deployed/build/${gitSha1}.zip`)) {
-      const zipCommand = `cd ../deployed && npm install && mkdir -p build &&
-        zip -r -q build/${gitSha1}.zip src/CreateThumbnail.js node_modules`
+    const gitSha1 = execSync('git rev-parse --short HEAD').toString().trim()
+    const zipPath = `../deployed/build/${gitSha1}.zip`
+    if (!fs.existsSync(zipPath)) {
+      const zipCommand = `cd ../deployed &&
+        npm install &&
+        mkdir -p build &&
+        cat src/CreateThumbnail.js > CreateThumbnail.js &&
+        zip -r -q ../deployer/${zipPath} CreateThumbnail.js node_modules &&
+        rm -f CreateThumbnail.js`
+// TODO: check porcelain for uncommitted
       console.log(`Executing ${zipCommand}...`)
       console.log(execSync(zipCommand).toString())
     }
-    reject()
-  })
-  /*
-  return new Promise(function(resolve, reject) {
-    console.log(
-      `Requesting Lambda.listVersionsByFunction for name '${functionName}'...`)
-    new AWS.Lambda().listVersionsByFunction({
-      FunctionName: functionName,
-    }, function(err, data) {
-      if (err) {
-        if (err.code === 'ResourceNotFoundException') {
-          resolve(createFunction(functionName, executionRoleArn))
+    sha256Base64OfPath(zipPath).then(function(zipSha256) {
+      console.log(
+        `Requesting Lambda.listVersionsByFunction for name '${functionName}'...`)
+      Lambda.listVersionsByFunction({
+        FunctionName: functionName,
+      }, function(err, data) {
+        if (err) {
+          if (err.code === 'ResourceNotFoundException') {
+            resolve(createFunction(functionName, executionRoleArn, zipPath))
+          } else {
+            reject(err)
+          }
         } else {
-          reject(err)
-        }
-      } else {
-        if (!data || !data.Versions) {
-          reject(`Couldn't find Versions in: ${JSON.stringify(data)}`)
-        } else {
-          let functionArn;
-          for (const version of (data.Versions:any)) {
-            if (version.Version === '$LATEST') {
-              functionArn = version['FunctionArn'].replace(/:\$LATEST$/, '')
+          if (!data || !data.Versions) {
+            reject(`Couldn't find Versions in: ${JSON.stringify(data)}`)
+          } else {
+            let matchingFunctionArn;
+            for (const version of (data.Versions:any)) {
+              if (version.Version === '$LATEST' && version.CodeSha256 === zipSha256) {
+                matchingFunctionArn =
+                  version.FunctionArn.split(':').slice(0, 7).join(':')
+              }
+            }
+            if (matchingFunctionArn) {
+              console.log(`Found latest version matching ${zipSha256}`)
+              resolve(matchingFunctionArn)
+            } else {
+              console.log(`Couldn't find latest version matching ${zipSha256}`)
+              deleteFunction(functionName, false).then(function() {
+                resolve(createFunction(functionName, executionRoleArn, zipPath))
+              })
             }
           }
-          if (functionArn) {
-            resolve(functionArn)
-          } else {
-            reject(
-              `Couldn't find functionArn in versions: ${JSON.stringify(data)}`)
-          }
-        }
-      }
-    })
-  })
-  */
+        } // end if
+      }) // end listVersionsByFunction
+    }) // end then
+  }) // end Promise
 }
 
 function invokeFunction(functionName:string, sourceBucket:string) {
   return new Promise(function(resolve, reject) {
     console.log(
       `Requesting Lambda.invokeFunction for name '${functionName}'...`)
-    new AWS.Lambda().invoke({
+    Lambda.invoke({
       FunctionName: functionName,
       InvocationType: 'RequestResponse',
       LogType: 'Tail',
@@ -272,8 +299,8 @@ function invokeFunction(functionName:string, sourceBucket:string) {
 function putBucketNotification(sourceBucket:string, functionArn:string) {
   console.log('functionArn', functionArn)
   return new Promise(function(resolve, reject) {
-    console.log(`Requesting Lambda.putBucketNotification...`)
-    new AWS.S3().putBucketNotification({
+    console.log(`Requesting S3.putBucketNotification...`)
+    S3.putBucketNotification({
       Bucket: sourceBucket,
       NotificationConfiguration: {
         CloudFunctionConfiguration: {
@@ -295,7 +322,7 @@ function putBucketNotification(sourceBucket:string, functionArn:string) {
 function addPermission(functionName:string, sourceBucket:string) {
   return new Promise(function(resolve, reject) {
     console.log(`Requesting Lambda.addPermission...`)
-    new AWS.Lambda().addPermission({
+    Lambda.addPermission({
       FunctionName: functionName,
       Action: 'lambda:InvokeFunction',
       Principal: 's3.amazonaws.com',
@@ -318,7 +345,7 @@ function addPermission(functionName:string, sourceBucket:string) {
 function deleteFunction(functionName:string, ignoreIfNotExists:bool) {
   return new Promise(function(resolve, reject) {
     console.log(`Requesting Lambda.deleteFunction for '${functionName}'...`)
-    new AWS.Lambda().deleteFunction({
+    Lambda.deleteFunction({
       FunctionName: functionName,
     }, function(err, data) {
       if (err) {
@@ -373,23 +400,84 @@ function deleteRolePolicy(roleName:string, policyName:string, ignoreIfNotExists:
   })
 }
 
+function deleteS3BucketRecursively(bucketName:string, ignoreIfNotExists:bool) {
+  return new Promise(function(resolve, reject) {
+    console.log(`Requesting S3.deleteBucket for '${bucketName}'...`)
+    S3.deleteBucket({
+      Bucket: bucketName,
+    }, function(err, data) {
+      if (err) {
+        if (ignoreIfNotExists && err.code === 'NoSuchBucket') {
+          resolve()
+        } else if (err.code === 'BucketNotEmpty') {
+          console.log(`Requesting S3.listObjects for '${bucketName}'...`)
+          S3.listObjects({
+            Bucket: bucketName,
+          }, function(err, data) {
+            if (err) {
+              reject(err)
+            } else {
+              const objectsToDelete = []
+              for (const object of (data:any).Contents) {
+                objectsToDelete.push({
+                  Key:       (object:any).Key,
+                  VersionId: (object:any).VersionId,
+                })
+              }
+
+              console.log(`Requesting S3.deleteObjects for '${bucketName}'...`)
+              S3.deleteObjects({
+                Bucket: bucketName,
+                Delete: {
+                  Objects: objectsToDelete,
+                },
+              }, function(err, data) {
+                if (err) {
+                  reject(err)
+                } else {
+                  resolve(deleteS3BucketRecursively(bucketName, ignoreIfNotExists))
+                }
+              })
+            }
+          })
+        } else { // if not BucketNotEmpty
+          reject(err)
+        }
+      } else { // if not err
+        resolve()
+      }
+    })
+  })
+}
+
 if (false) {
-  deleteFunction(FUNCTION_NAME, true).then(function() {
-    deleteRolePolicy(EXECUTION_ROLE_NAME, EXECUTION_POLICY_NAME, true)
-        .then(function() {
-      deleteRole(EXECUTION_ROLE_NAME, true).then(function() {
-        console.log('deleted')
+  deleteS3BucketRecursively(SOURCE_BUCKET, true).then(function() {
+    deleteS3BucketRecursively(TARGET_BUCKET, true).then(function() {
+      deleteFunction(FUNCTION_NAME, true).then(function() {
+        deleteRolePolicy(EXECUTION_ROLE_NAME, EXECUTION_POLICY_NAME, true)
+            .then(function() {
+          deleteRole(EXECUTION_ROLE_NAME, true).then(function() {
+            console.log('deleted')
+          })
+        })
       })
     })
   })
 }
 if (true) {
+  const setupCommands = `aws s3 mb s3://${SOURCE_BUCKET} &&
+    aws s3 mb s3://${TARGET_BUCKET} &&
+    aws s3 cp ../HappyFace.jpg s3://${SOURCE_BUCKET}/HappyFace.jpg`
+  console.log(`Running ${setupCommands}...`)
+  console.log(execSync(setupCommands).toString())
+
   createIamRoleIdempotent(EXECUTION_ROLE_NAME).then(function(executionRoleArn) {
+    console.log('executionRoleArn', executionRoleArn)
     putRolePolicyIdempotent(EXECUTION_ROLE_NAME, EXECUTION_POLICY_NAME,
         SOURCE_BUCKET, TARGET_BUCKET).then(function() {
       createFunctionIdempotent(FUNCTION_NAME, executionRoleArn)
           .then(function(functionArn) {
-        console.log('executionRoleArn', executionRoleArn)
+        console.log('functionArn', functionArn)
         addPermission(FUNCTION_NAME, SOURCE_BUCKET).then(function() {
           putBucketNotification(SOURCE_BUCKET, functionArn).then(function() {
             console.log('put bucket notification')
@@ -404,38 +492,3 @@ if (true) {
     console.error('Error', err)
   })
 }
-
-/*
-var crypto = require('crypto');
-var path = require('path');
-var lambda = new AWS.Lambda({
-      region: 'us-west-2'
-});
-var filePath = path.resolve(__dirname, 'CreateThumbnail.zip');
-
-new AWS.Lambda().getFunction({
-      FunctionName: FUNCTION_NAME,
-}, function (error, data) {
-      if (error) {
-                console.error(error);
-                return process.exit(1);
-            }
-      var lambdaSha256 = (data:any).Configuration.CodeSha256;
-
-      var shasum = crypto.createHash('sha256');
-      fs.createReadStream(filePath)
-      .on("data", function (chunk) {
-                shasum.update(chunk);
-            })
-      .on("end", function () {
-                var sha256 = shasum.digest('base64');
-                console.log('sha256', sha256, 'on lambda:', lambdaSha256)
-                if (sha256 === lambdaSha256) {
-                              console.log("No need to upload, sha hashes are the same");
-                          } else {
-                                        console.log("That needs to be uploaded again son.")
-                                    }
-                process.exit();
-            });
-});
-*/
