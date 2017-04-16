@@ -1,0 +1,92 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "Np7jBYbiK5yhhQHCB2O45txShUk=",
+			"path": "github.com/aws/aws-sdk-go",
+			"revision": "baba9e786eae5ba978f2007f8e718557b29157c8",
+			"revisionTime": "2017-04-12T18:25:50Z",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "dvabztWVQX8f6oMLRyv4dLH+TGY=",
+			"path": "github.com/davecgh/go-spew/spew",
+			"revision": "346938d642f2ec3594ed81d874461961cd0faa76",
+			"revisionTime": "2016-10-29T20:57:26Z"
+		},
+		{
+			"checksumSHA1": "+IH9gXMht4fL/fxKRZ4sqGBps1g=",
+			"path": "github.com/go-ini/ini",
+			"revision": "e7fea39b01aea8d5671f6858f0532f56e8bff3a5",
+			"revisionTime": "2017-03-28T15:39:02Z"
+		},
+		{
+			"checksumSHA1": "xAa0VdpPC5Fc0mcrB1FiICrKgRs=",
+			"path": "github.com/gucumber/gucumber",
+			"revision": "71608e2f6e76fd4da5b09a376aeec7a5c0b5edbc",
+			"revisionTime": "2016-07-15T01:59:14Z"
+		},
+		{
+			"checksumSHA1": "mTDYFrIKPm7wgUXfB9UEvCxk2Rw=",
+			"path": "github.com/gucumber/gucumber/gherkin",
+			"revision": "71608e2f6e76fd4da5b09a376aeec7a5c0b5edbc",
+			"revisionTime": "2016-07-15T01:59:14Z"
+		},
+		{
+			"checksumSHA1": "0ZrwvB6KoGPj2PoDNSEJwxQ6Mog=",
+			"path": "github.com/jmespath/go-jmespath",
+			"revision": "bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d",
+			"revisionTime": "2016-08-03T19:07:31Z"
+		},
+		{
+			"checksumSHA1": "LuFv4/jlrmFNnDb/5SCSEPAM9vU=",
+			"path": "github.com/pmezard/go-difflib/difflib",
+			"revision": "792786c7400a136282c1664665ae0a8db921c6c2",
+			"revisionTime": "2016-01-10T10:55:54Z"
+		},
+		{
+			"checksumSHA1": "v5CCEZdC63TIkIL8TUeURBcZzNc=",
+			"path": "github.com/shiena/ansicolor",
+			"revision": "a422bbe96644373c5753384a59d678f7d261ff10",
+			"revisionTime": "2015-11-19T15:19:21Z"
+		},
+		{
+			"checksumSHA1": "JXUVA1jky8ZX8w09p2t5KLs97Nc=",
+			"path": "github.com/stretchr/testify/assert",
+			"revision": "4d4bfba8f1d1027c4fdbe371823030df51419987",
+			"revisionTime": "2017-01-30T11:31:45Z"
+		},
+		{
+			"checksumSHA1": "vqc3a+oTUGX8PmD0TS+qQ7gmN8I=",
+			"path": "golang.org/x/net/html",
+			"revision": "5602c733f70afc6dcec6766be0d5034d4c4f14de",
+			"revisionTime": "2017-04-13T17:15:43Z"
+		},
+		{
+			"checksumSHA1": "00eQaGynDYrv3tL+C7l9xH0IDZg=",
+			"path": "golang.org/x/net/html/atom",
+			"revision": "5602c733f70afc6dcec6766be0d5034d4c4f14de",
+			"revisionTime": "2017-04-13T17:15:43Z"
+		},
+		{
+			"checksumSHA1": "ikor+YKJu2eKwyFteBWhsb8IGy8=",
+			"path": "golang.org/x/tools/go/ast/astutil",
+			"revision": "663269851cdddc898f963782f74ea574bcd5c814",
+			"revisionTime": "2017-03-31T22:27:27Z"
+		},
+		{
+			"checksumSHA1": "AnXFEvmaJ7w2Q7hWPcLUmCbPgq0=",
+			"path": "golang.org/x/tools/go/buildutil",
+			"revision": "663269851cdddc898f963782f74ea574bcd5c814",
+			"revisionTime": "2017-03-31T22:27:27Z"
+		},
+		{
+			"checksumSHA1": "3HnsDHAsl+izX3j9xpU6veKrWpk=",
+			"path": "golang.org/x/tools/go/loader",
+			"revision": "663269851cdddc898f963782f74ea574bcd5c814",
+			"revisionTime": "2017-03-31T22:27:27Z"
+		}
+	],
+	"rootPath": "github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/go"
+}
