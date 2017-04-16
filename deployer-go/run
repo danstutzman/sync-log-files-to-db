@@ -1,0 +1,3 @@
+#!/bin/bash -ex
+go install -v -race
+$GOPATH/bin/deployer-go
