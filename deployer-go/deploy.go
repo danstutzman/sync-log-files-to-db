@@ -7,8 +7,10 @@ import (
 	"log"
 )
 
-func createBucket(s3Service *s3.S3, bucketName string) chan struct{} {
-	future := make(chan struct{})
+type CreateBucketReturn struct{}
+
+func createBucket(s3Service *s3.S3, bucketName string) chan CreateBucketReturn {
+	future := make(chan CreateBucketReturn)
 	go func() {
 		log.Printf("Creating bucket %s...", bucketName)
 		output, err := s3Service.CreateBucket(&s3.CreateBucketInput{
@@ -20,7 +22,7 @@ func createBucket(s3Service *s3.S3, bucketName string) chan struct{} {
 
 		log.Println(output)
 
-		future <- struct{}{}
+		future <- CreateBucketReturn{}
 	}()
 	return future
 }
