@@ -6,14 +6,14 @@ import (
 	"log"
 )
 
-func putRolePolicy(iamService *iam.IAM, roleName string, sourceBucket string, targetBucket string) chan EmptyReturn {
+func putRolePolicy(iamService *iam.IAM, roleName, policyName, sourceBucket, targetBucket string) chan EmptyReturn {
 	future := make(chan EmptyReturn)
 	go func() {
 		log.Printf("Put role policy on %s...", roleName)
 
 		output, err := iamService.PutRolePolicy(&iam.PutRolePolicyInput{
 			RoleName:   aws.String(roleName),
-			PolicyName: aws.String(roleName + "-policy"),
+			PolicyName: aws.String(policyName),
 			PolicyDocument: aws.String(`{
 				"Version": "2012-10-17",
 				"Statement": [

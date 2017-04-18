@@ -17,6 +17,7 @@ func main() {
 		TargetBucketName: "danstutzman-lambda-exampleresized",
 		FunctionName:     "CreateThumbnail",
 		RoleName:         "lambda-CreateThumbnail-execution",
+		PolicyName:       "lambda-CreateThumbnail-execution-access",
 	})
 
 	switch verb {

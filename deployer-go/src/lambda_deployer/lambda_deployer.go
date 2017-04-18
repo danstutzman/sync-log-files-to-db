@@ -13,6 +13,7 @@ type Config struct {
 	TargetBucketName string
 	FunctionName     string
 	RoleName         string
+	PolicyName       string
 }
 
 type LambdaDeployer struct {
@@ -56,7 +57,7 @@ func (self *LambdaDeployer) SetupBuckets() {
 func (self *LambdaDeployer) DeployFunction() {
 	roleArn :=
 		(<-createRoleIdempotent(self.iamService, self.config.RoleName)).roleArn
-	<-putRolePolicy(self.iamService, self.config.RoleName,
+	<-putRolePolicy(self.iamService, self.config.RoleName, self.config.PolicyName,
 		self.config.SourceBucketName, self.config.TargetBucketName)
 
 	zipPath := zip("../deployed")
@@ -81,8 +82,12 @@ type EmptyReturn struct{}
 func (self *LambdaDeployer) DeleteEverything() {
 	future1 := deleteBucket(self.s3Service, self.config.SourceBucketName)
 	future2 := deleteBucket(self.s3Service, self.config.TargetBucketName)
-	future3 := deleteFunction(self.lambdaService, self.config.FunctionName)
+
+	<-deleteFunction(self.lambdaService, self.config.FunctionName)
+	<-deleteRolePolicy(self.iamService, self.config.RoleName,
+		self.config.PolicyName)
+	<-deleteRole(self.iamService, self.config.RoleName)
+
 	<-future1
 	<-future2
-	<-future3
 }
