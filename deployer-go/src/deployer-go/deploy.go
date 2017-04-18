@@ -2,13 +2,15 @@ package main
 
 import (
 	"github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/deployer-go/src/aws_services"
+	"log"
+	"os"
 )
 
 func main() {
 	sourceBucketName := "danstutzman-lambda-example"
 	targetBucketName := sourceBucketName + "resized"
 	functionName := "CreateThumbnail"
-	executionRoleName := "lambda-" + functionName + "-execution"
+	roleName := "lambda-" + functionName + "-execution"
 
 	aws := aws_services.NewAwsServices()
 
@@ -24,6 +26,9 @@ func main() {
 		<-copySampleImageFuture
 	}
 
-	executionRoleArn := <-aws.CreateRoleIdempotent(executionRoleName)
-	_ = executionRoleArn
+	roleArn := <-aws.CreateRoleIdempotent(roleName)
+	_ = roleArn
+	<-aws.PutRolePolicy(roleName, sourceBucketName, targetBucketName)
+
+	log.Printf("%s completed successfully", os.Args[0])
 }

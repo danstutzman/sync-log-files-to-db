@@ -1,4 +1,4 @@
 #!/bin/bash -ex
 cd `dirname $0`/src
-go install -v -race
-$GOPATH/bin/deployer-go
+GOBIN=$GOPATH/bin go install -v -race github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/deployer-go/src/deployer-go
+exec $GOPATH/bin/deployer-go
