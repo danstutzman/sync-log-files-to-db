@@ -2,6 +2,7 @@ package lambda_deployer
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"log"
 )
@@ -58,7 +59,8 @@ func createRoleIdempotent(iamService *iam.IAM, roleName string) chan CreateRoleI
 	go func() {
 		arn, err := getArnForRole(iamService, roleName)
 		if err != nil {
-			if err.Error() == iam.ErrCodeNoSuchEntityException {
+			if err2, ok := err.(awserr.Error); ok && err2.Code() ==
+				iam.ErrCodeNoSuchEntityException {
 				<-createRoleNonIdempotent(iamService, roleName)
 				arn, err = getArnForRole(iamService, roleName)
 				if err != nil {
