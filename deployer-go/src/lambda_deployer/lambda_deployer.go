@@ -77,3 +77,10 @@ type CreateRoleIdempotentReturn struct {
 }
 
 type EmptyReturn struct{}
+
+func (self *LambdaDeployer) DeleteEverything() {
+	future1 := deleteBucket(self.s3Service, self.config.SourceBucketName)
+	future2 := deleteBucket(self.s3Service, self.config.TargetBucketName)
+	<-future1
+	<-future2
+}
