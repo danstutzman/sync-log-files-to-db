@@ -1,9 +1,0 @@
-[ignore]
-
-[include]
-
-[libs]
-node_modules/aws-sdk-flow-decls/aws-sdk.decls.js
-./interfaces
-
-[options]

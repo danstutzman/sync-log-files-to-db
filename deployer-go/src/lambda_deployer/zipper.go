@@ -39,7 +39,7 @@ func zip(pathToDeploy string) string {
 			npm install &&
 			mkdir -p build &&
 			cat src/CreateThumbnail.js > CreateThumbnail.js &&
-			zip -r -q ../deployer/` + zipPath + ` CreateThumbnail.js node_modules &&
+			zip -r -q ../deployer-go/` + zipPath + ` CreateThumbnail.js node_modules &&
 			rm -f CreateThumbnail.js`}
 		log.Printf("Running %s...", strings.Join(zipCommand, " "))
 		cmd := exec.Command(zipCommand[0], zipCommand[1:]...)

@@ -2,10 +2,6 @@
 /deployed/node_modules
 /deployed/CreateThumbnail.zip
 
-/deployer/build
-/deployer/config.json
-/deployer/node_modules
-
 /CreateThumbnail-data.json
 /HappyFace.jpg
 
