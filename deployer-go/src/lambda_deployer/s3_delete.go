@@ -52,7 +52,7 @@ func deleteBucket(s3Service *s3.S3, bucketName string) chan EmptyReturn {
 			} else if err2, ok := err.(awserr.Error); ok && err2.Code() ==
 				"BucketNotEmpty" {
 				deletePageOfObjects(s3Service, bucketName)
-				<-deleteBucket(s3Service, bucketName) // try again
+				future <- <-deleteBucket(s3Service, bucketName) // try again
 			} else {
 				log.Fatalf("Error from DeleteBucket: %s", err)
 			}

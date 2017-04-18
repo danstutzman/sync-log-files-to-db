@@ -43,7 +43,7 @@ func createFunction(lambdaService *lambda.Lambda, zipPath string, functionName s
 	}
 }
 
-func deleteFunction(lambdaService *lambda.Lambda, functionName string) {
+func deleteFunctionSync(lambdaService *lambda.Lambda, functionName string) {
 	log.Printf("Deleting %s...", functionName)
 	_, err := lambdaService.DeleteFunction(&lambda.DeleteFunctionInput{
 		FunctionName: aws.String(functionName),
@@ -87,7 +87,7 @@ func uploadZip(lambdaService *lambda.Lambda, zipPath string, functionName string
 				future <- UploadZipReturn{functionArn: matchingFunctionArn}
 			} else {
 				log.Printf("Couldn't find latest version matching %s", zipSha256)
-				deleteFunction(lambdaService, functionName)
+				deleteFunctionSync(lambdaService, functionName)
 				future <- createFunction(lambdaService, zipPath, functionName, roleArn)
 			}
 		}

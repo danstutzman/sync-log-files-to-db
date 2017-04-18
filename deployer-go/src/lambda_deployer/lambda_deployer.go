@@ -81,6 +81,8 @@ type EmptyReturn struct{}
 func (self *LambdaDeployer) DeleteEverything() {
 	future1 := deleteBucket(self.s3Service, self.config.SourceBucketName)
 	future2 := deleteBucket(self.s3Service, self.config.TargetBucketName)
+	future3 := deleteFunction(self.lambdaService, self.config.FunctionName)
 	<-future1
 	<-future2
+	<-future3
 }
