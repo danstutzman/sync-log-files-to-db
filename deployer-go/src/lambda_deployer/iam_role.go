@@ -1,4 +1,4 @@
-package aws_services
+package lambda_deployer
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
@@ -55,18 +55,14 @@ func getArnForRole(iamService *iam.IAM, roleName string) (string, error) {
 	}
 }
 
-type CreateRoleIdempotentReturn struct {
-	arn string
-}
-
-func (awsServices *AwsServices) CreateRoleIdempotent(roleName string) chan CreateRoleIdempotentReturn {
+func createRoleIdempotent(iamService *iam.IAM, roleName string) chan CreateRoleIdempotentReturn {
 	future := make(chan CreateRoleIdempotentReturn)
 	go func() {
-		arn, err := getArnForRole(awsServices.iamService, roleName)
+		arn, err := getArnForRole(iamService, roleName)
 		if err != nil {
 			if err.Error() == iam.ErrCodeNoSuchEntityException {
-				<-createRoleNonIdempotent(awsServices.iamService, roleName)
-				arn, err = getArnForRole(awsServices.iamService, roleName)
+				<-createRoleNonIdempotent(iamService, roleName)
+				arn, err = getArnForRole(iamService, roleName)
 				if err != nil {
 					log.Fatalf("Error from second GetRole: %s", err)
 				}

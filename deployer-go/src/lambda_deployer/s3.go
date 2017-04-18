@@ -1,4 +1,4 @@
-package aws_services
+package lambda_deployer
 
 import (
 	"bytes"
@@ -8,13 +8,11 @@ import (
 	"log"
 )
 
-type CreateBucketReturn struct{}
-
-func (awsServices *AwsServices) CreateBucket(bucketName string) chan CreateBucketReturn {
+func createBucket(s3Service *s3.S3, bucketName string) chan CreateBucketReturn {
 	future := make(chan CreateBucketReturn)
 	go func() {
 		log.Printf("Creating bucket %s...", bucketName)
-		output, err := awsServices.s3Service.CreateBucket(&s3.CreateBucketInput{
+		output, err := s3Service.CreateBucket(&s3.CreateBucketInput{
 			Bucket: aws.String(bucketName),
 		})
 		if err != nil {
@@ -28,9 +26,7 @@ func (awsServices *AwsServices) CreateBucket(bucketName string) chan CreateBucke
 	return future
 }
 
-type CopyToBucketReturn struct{}
-
-func (awsServices *AwsServices) CopyToBucket(fromPath string, toBucketName string,
+func copyToBucket(s3Service *s3.S3, fromPath string, toBucketName string,
 	toPath string) chan CopyToBucketReturn {
 	future := make(chan CopyToBucketReturn)
 	go func() {
@@ -41,7 +37,7 @@ func (awsServices *AwsServices) CopyToBucket(fromPath string, toBucketName strin
 			log.Fatalf("Error from ReadFile: %s", err)
 		}
 
-		output, err := awsServices.s3Service.PutObject(&s3.PutObjectInput{
+		output, err := s3Service.PutObject(&s3.PutObjectInput{
 			Bucket: aws.String(toBucketName),
 			Key:    aws.String(toPath),
 			Body:   bytes.NewReader(fromBytes),

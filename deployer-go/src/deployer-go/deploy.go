@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/deployer-go/src/aws_services"
+	"github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/deployer-go/src/lambda_deployer"
 	"log"
 	"os"
 )
@@ -12,23 +12,23 @@ func main() {
 	functionName := "CreateThumbnail"
 	roleName := "lambda-" + functionName + "-execution"
 
-	aws := aws_services.NewAwsServices()
+	deployer := lambda_deployer.NewLambdaDeployer()
 
 	if false {
-		createSourceBucketFuture := aws.CreateBucket(sourceBucketName)
-		createTargetBucketFuture := aws.CreateBucket(targetBucketName)
+		createSourceBucketFuture := deployer.CreateBucket(sourceBucketName)
+		createTargetBucketFuture := deployer.CreateBucket(targetBucketName)
 
 		<-createSourceBucketFuture
-		copySampleImageFuture := aws.CopyToBucket("../HappyFace.jpg",
+		copySampleImageFuture := deployer.CopyToBucket("../HappyFace.jpg",
 			sourceBucketName, "/HappyFace.jpg")
 
 		<-createTargetBucketFuture
 		<-copySampleImageFuture
 	}
 
-	roleArn := <-aws.CreateRoleIdempotent(roleName)
+	roleArn := <-deployer.CreateRoleIdempotent(roleName)
 	_ = roleArn
-	<-aws.PutRolePolicy(roleName, sourceBucketName, targetBucketName)
+	<-deployer.PutRolePolicy(roleName, sourceBucketName, targetBucketName)
 
 	log.Printf("%s completed successfully", os.Args[0])
 }

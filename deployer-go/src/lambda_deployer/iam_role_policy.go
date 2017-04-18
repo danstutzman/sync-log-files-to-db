@@ -1,4 +1,4 @@
-package aws_services
+package lambda_deployer
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
@@ -6,14 +6,12 @@ import (
 	"log"
 )
 
-type PutRolePolicyReturn struct{}
-
-func (awsServices *AwsServices) PutRolePolicy(roleName string, sourceBucket string, targetBucket string) chan PutRolePolicyReturn {
+func putRolePolicy(iamService *iam.IAM, roleName string, sourceBucket string, targetBucket string) chan PutRolePolicyReturn {
 	future := make(chan PutRolePolicyReturn)
 	go func() {
 		log.Printf("Put role policy on %s...", roleName)
 
-		output, err := awsServices.iamService.PutRolePolicy(&iam.PutRolePolicyInput{
+		output, err := iamService.PutRolePolicy(&iam.PutRolePolicyInput{
 			RoleName:   aws.String(roleName),
 			PolicyName: aws.String(roleName + "-policy"),
 			PolicyDocument: aws.String(`{
