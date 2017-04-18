@@ -1,3 +1,4 @@
 #!/bin/bash -ex
+cd `dirname $0`/src
 go install -v -race
 $GOPATH/bin/deployer-go
