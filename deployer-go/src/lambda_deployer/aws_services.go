@@ -6,13 +6,21 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
+type Config struct {
+	SourceBucketName string
+	TargetBucketName string
+	FunctionName     string
+	RoleName         string
+}
+
 type LambdaDeployer struct {
+	config     Config
 	awsSession *session.Session
 	s3Service  *s3.S3
 	iamService *iam.IAM
 }
 
-func NewLambdaDeployer() *LambdaDeployer {
+func NewLambdaDeployer(config Config) *LambdaDeployer {
 	// Initialize a session that the SDK will use to load configuration,
 	// credentials, and region from the shared config file. (~/.aws/config).
 	awsSession := session.Must(session.NewSessionWithOptions(session.Options{
@@ -20,31 +28,36 @@ func NewLambdaDeployer() *LambdaDeployer {
 	}))
 
 	return &LambdaDeployer{
+		config:     config,
 		awsSession: awsSession,
 		s3Service:  s3.New(awsSession),
 		iamService: iam.New(awsSession),
 	}
 }
 
+func (self *LambdaDeployer) SetupBuckets() {
+	createSourceBucketFuture := createBucket(self.s3Service,
+		self.config.SourceBucketName)
+	createTargetBucketFuture := createBucket(self.s3Service,
+		self.config.TargetBucketName)
+
+	<-createSourceBucketFuture
+	copySampleImageFuture := copyToBucket(self.s3Service, "../HappyFace.jpg",
+		self.config.SourceBucketName, "/HappyFace.jpg")
+
+	<-createTargetBucketFuture
+	<-copySampleImageFuture
+}
+
+func (self *LambdaDeployer) DeployFunction() {
+	roleArn := <-createRoleIdempotent(self.iamService, self.config.RoleName)
+	_ = roleArn
+	<-putRolePolicy(self.iamService, self.config.RoleName,
+		self.config.SourceBucketName, self.config.TargetBucketName)
+}
+
 type CreateRoleIdempotentReturn struct {
 	arn string
 }
 
-func (lambdaDeployer *LambdaDeployer) CreateRoleIdempotent(roleName string) chan CreateRoleIdempotentReturn {
-	return createRoleIdempotent(lambdaDeployer.iamService, roleName)
-}
-
 type EmptyReturn struct{}
-
-func (lambdaDeployer *LambdaDeployer) PutRolePolicy(roleName string, sourceBucket string, targetBucket string) chan EmptyReturn {
-	return putRolePolicy(lambdaDeployer.iamService, roleName, sourceBucket,
-		targetBucket)
-}
-
-func (lambdaDeployer *LambdaDeployer) CreateBucket(bucketName string) chan EmptyReturn {
-	return createBucket(lambdaDeployer.s3Service, bucketName)
-}
-
-func (lambdaDeployer *LambdaDeployer) CopyToBucket(fromPath string, toBucketName string, toPath string) chan EmptyReturn {
-	return copyToBucket(lambdaDeployer.s3Service, fromPath, toBucketName, toPath)
-}

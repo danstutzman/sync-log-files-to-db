@@ -7,28 +7,16 @@ import (
 )
 
 func main() {
-	sourceBucketName := "danstutzman-lambda-example"
-	targetBucketName := sourceBucketName + "resized"
-	functionName := "CreateThumbnail"
-	roleName := "lambda-" + functionName + "-execution"
-
-	deployer := lambda_deployer.NewLambdaDeployer()
-
+	deployer := lambda_deployer.NewLambdaDeployer(lambda_deployer.Config{
+		SourceBucketName: "danstutzman-lambda-example",
+		TargetBucketName: "danstutzman-lambda-exampleresized",
+		FunctionName:     "CreateThumbnail",
+		RoleName:         "lambda-CreateThumbnail-execution",
+	})
 	if false {
-		createSourceBucketFuture := deployer.CreateBucket(sourceBucketName)
-		createTargetBucketFuture := deployer.CreateBucket(targetBucketName)
-
-		<-createSourceBucketFuture
-		copySampleImageFuture := deployer.CopyToBucket("../HappyFace.jpg",
-			sourceBucketName, "/HappyFace.jpg")
-
-		<-createTargetBucketFuture
-		<-copySampleImageFuture
+		deployer.SetupBuckets()
 	}
-
-	roleArn := <-deployer.CreateRoleIdempotent(roleName)
-	_ = roleArn
-	<-deployer.PutRolePolicy(roleName, sourceBucketName, targetBucketName)
+	deployer.DeployFunction()
 
 	log.Printf("%s completed successfully", os.Args[0])
 }
