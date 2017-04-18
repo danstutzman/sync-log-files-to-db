@@ -67,6 +67,9 @@ func (self *LambdaDeployer) DeployFunction() {
 		self.config.SourceBucketName)
 	<-putBucketNotification(self.s3Service, self.config.SourceBucketName,
 		functionArn)
+	logText := (<-invokeFunction(self.lambdaService, self.config.FunctionName,
+		self.config.SourceBucketName)).logText
+	log.Printf("LogText: %s", logText)
 }
 
 type CreateRoleIdempotentReturn struct {
