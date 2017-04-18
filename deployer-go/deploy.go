@@ -11,7 +11,7 @@ import (
 
 type CreateBucketReturn struct{}
 
-func createBucket(s3Service *s3.S3, bucketName string) chan CreateBucketReturn {
+func CreateBucket(s3Service *s3.S3, bucketName string) chan CreateBucketReturn {
 	future := make(chan CreateBucketReturn)
 	go func() {
 		log.Printf("Creating bucket %s...", bucketName)
@@ -31,7 +31,7 @@ func createBucket(s3Service *s3.S3, bucketName string) chan CreateBucketReturn {
 
 type CopyToBucketReturn struct{}
 
-func copyToBucket(s3Service *s3.S3, fromPath string, toBucketName string,
+func CopyToBucket(s3Service *s3.S3, fromPath string, toBucketName string,
 	toPath string) chan CopyToBucketReturn {
 	future := make(chan CopyToBucketReturn)
 	go func() {
@@ -69,13 +69,13 @@ func main() {
 	}))
 
 	s3Service := s3.New(awsSession)
+		createSourceBucketFuture := CreateBucket(s3Service, sourceBucketName)
+		createTargetBucketFuture := CreateBucket(s3Service, targetBucketName)
 
-	createSourceBucketFuture := createBucket(s3Service, sourceBucketName)
-	createTargetBucketFuture := createBucket(s3Service, targetBucketName)
+		copySampleImageFuture := CopyToBucket(s3Service, "../HappyFace.jpg",
+			sourceBucketName, "/HappyFace.jpg")
 
 	<-createSourceBucketFuture
-	copySampleImageFuture := copyToBucket(s3Service, "../HappyFace.jpg",
-		sourceBucketName, "/HappyFace.jpg")
 
 	<-createTargetBucketFuture
 	<-copySampleImageFuture
