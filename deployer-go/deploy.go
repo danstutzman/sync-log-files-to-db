@@ -22,7 +22,7 @@ func CreateBucket(s3Service *s3.S3, bucketName string) chan CreateBucketReturn {
 			log.Fatalf("Error from CreateBucket: %s", err)
 		}
 
-		log.Println(output)
+		log.Printf("Output from CreateBucket: %s", output)
 
 		future <- CreateBucketReturn{}
 	}()
@@ -48,10 +48,10 @@ func CopyToBucket(s3Service *s3.S3, fromPath string, toBucketName string,
 			Body:   bytes.NewReader(fromBytes),
 		})
 		if err != nil {
-			log.Fatalf("Error from CreateBucket: %s", err)
+			log.Fatalf("Error from PutObject: %s", err)
 		}
 
-		log.Println(output)
+		log.Printf("Output from PutObject: %s", output)
 
 		future <- CopyToBucketReturn{}
 	}()
