@@ -50,10 +50,14 @@ func (self *LambdaDeployer) SetupBuckets() {
 }
 
 func (self *LambdaDeployer) DeployFunction() {
-	roleArn := <-createRoleIdempotent(self.iamService, self.config.RoleName)
-	_ = roleArn
-	<-putRolePolicy(self.iamService, self.config.RoleName,
-		self.config.SourceBucketName, self.config.TargetBucketName)
+	/*
+		roleArn := <-createRoleIdempotent(self.iamService, self.config.RoleName)
+		_ = roleArn
+		<-putRolePolicy(self.iamService, self.config.RoleName,
+			self.config.SourceBucketName, self.config.TargetBucketName)
+	*/
+
+	zip("../deployed")
 }
 
 type CreateRoleIdempotentReturn struct {
