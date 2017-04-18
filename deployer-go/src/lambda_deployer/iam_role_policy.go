@@ -6,8 +6,8 @@ import (
 	"log"
 )
 
-func putRolePolicy(iamService *iam.IAM, roleName string, sourceBucket string, targetBucket string) chan PutRolePolicyReturn {
-	future := make(chan PutRolePolicyReturn)
+func putRolePolicy(iamService *iam.IAM, roleName string, sourceBucket string, targetBucket string) chan EmptyReturn {
+	future := make(chan EmptyReturn)
 	go func() {
 		log.Printf("Put role policy on %s...", roleName)
 
@@ -47,7 +47,7 @@ func putRolePolicy(iamService *iam.IAM, roleName string, sourceBucket string, ta
 			log.Printf("Output from PutRolePolicy: %s", output)
 		}
 
-		future <- PutRolePolicyReturn{}
+		future <- EmptyReturn{}
 	}()
 	return future
 }

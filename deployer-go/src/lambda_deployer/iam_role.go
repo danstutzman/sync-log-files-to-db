@@ -6,12 +6,10 @@ import (
 	"log"
 )
 
-type CreateRoleNonIdempotentReturn struct{}
-
 func createRoleNonIdempotent(iamService *iam.IAM,
-	roleName string) chan CreateRoleNonIdempotentReturn {
+	roleName string) chan EmptyReturn {
 
-	future := make(chan CreateRoleNonIdempotentReturn)
+	future := make(chan EmptyReturn)
 	go func() {
 		log.Printf("Creating role named %s...", roleName)
 
@@ -38,7 +36,7 @@ func createRoleNonIdempotent(iamService *iam.IAM,
 			log.Printf("Output from CreateRole: %s", output)
 		}
 
-		future <- CreateRoleNonIdempotentReturn{}
+		future <- EmptyReturn{}
 	}()
 	return future
 }

@@ -8,8 +8,8 @@ import (
 	"log"
 )
 
-func createBucket(s3Service *s3.S3, bucketName string) chan CreateBucketReturn {
-	future := make(chan CreateBucketReturn)
+func createBucket(s3Service *s3.S3, bucketName string) chan EmptyReturn {
+	future := make(chan EmptyReturn)
 	go func() {
 		log.Printf("Creating bucket %s...", bucketName)
 		output, err := s3Service.CreateBucket(&s3.CreateBucketInput{
@@ -21,14 +21,14 @@ func createBucket(s3Service *s3.S3, bucketName string) chan CreateBucketReturn {
 
 		log.Printf("Output from CreateBucket: %s", output)
 
-		future <- CreateBucketReturn{}
+		future <- EmptyReturn{}
 	}()
 	return future
 }
 
 func copyToBucket(s3Service *s3.S3, fromPath string, toBucketName string,
-	toPath string) chan CopyToBucketReturn {
-	future := make(chan CopyToBucketReturn)
+	toPath string) chan EmptyReturn {
+	future := make(chan EmptyReturn)
 	go func() {
 		log.Printf("Copying %s to bucket %s...", fromPath, toBucketName)
 
@@ -48,7 +48,7 @@ func copyToBucket(s3Service *s3.S3, fromPath string, toBucketName string,
 
 		log.Printf("Output from PutObject: %s", output)
 
-		future <- CopyToBucketReturn{}
+		future <- EmptyReturn{}
 	}()
 	return future
 }

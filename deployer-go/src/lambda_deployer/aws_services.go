@@ -34,21 +34,17 @@ func (lambdaDeployer *LambdaDeployer) CreateRoleIdempotent(roleName string) chan
 	return createRoleIdempotent(lambdaDeployer.iamService, roleName)
 }
 
-type PutRolePolicyReturn struct{}
+type EmptyReturn struct{}
 
-func (lambdaDeployer *LambdaDeployer) PutRolePolicy(roleName string, sourceBucket string, targetBucket string) chan PutRolePolicyReturn {
+func (lambdaDeployer *LambdaDeployer) PutRolePolicy(roleName string, sourceBucket string, targetBucket string) chan EmptyReturn {
 	return putRolePolicy(lambdaDeployer.iamService, roleName, sourceBucket,
 		targetBucket)
 }
 
-type CreateBucketReturn struct{}
-
-func (lambdaDeployer *LambdaDeployer) CreateBucket(bucketName string) chan CreateBucketReturn {
+func (lambdaDeployer *LambdaDeployer) CreateBucket(bucketName string) chan EmptyReturn {
 	return createBucket(lambdaDeployer.s3Service, bucketName)
 }
 
-type CopyToBucketReturn struct{}
-
-func (lambdaDeployer *LambdaDeployer) CopyToBucket(fromPath string, toBucketName string, toPath string) chan CopyToBucketReturn {
+func (lambdaDeployer *LambdaDeployer) CopyToBucket(fromPath string, toBucketName string, toPath string) chan EmptyReturn {
 	return copyToBucket(lambdaDeployer.s3Service, fromPath, toBucketName, toPath)
 }
