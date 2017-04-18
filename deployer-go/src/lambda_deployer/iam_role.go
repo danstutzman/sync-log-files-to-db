@@ -68,7 +68,7 @@ func createRoleIdempotent(iamService *iam.IAM, roleName string) chan CreateRoleI
 				log.Fatalf("Error from first GetRole: %s", err)
 			}
 		}
-		future <- CreateRoleIdempotentReturn{arn: arn}
+		future <- CreateRoleIdempotentReturn{roleArn: arn}
 	}()
 	return future
 }

@@ -30,7 +30,8 @@ func findGitSha1(path string) string {
 	return strings.TrimSpace(string(stdoutBytes))
 }
 
-func zip(pathToDeploy string) {
+// Returns created zip file
+func zip(pathToDeploy string) string {
 	gitSha1 := findGitSha1(pathToDeploy)
 	zipPath := "../deployed/build/" + gitSha1 + ".zip"
 	if _, err := os.Stat(zipPath); os.IsNotExist(err) {
@@ -66,4 +67,5 @@ func zip(pathToDeploy string) {
 		}
 	}
 	// TODO: check porcelain for uncommitted
+	return zipPath
 }

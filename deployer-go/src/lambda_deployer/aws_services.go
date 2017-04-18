@@ -3,7 +3,9 @@ package lambda_deployer
 import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"log"
 )
 
 type Config struct {
@@ -14,10 +16,11 @@ type Config struct {
 }
 
 type LambdaDeployer struct {
-	config     Config
-	awsSession *session.Session
-	s3Service  *s3.S3
-	iamService *iam.IAM
+	config        Config
+	awsSession    *session.Session
+	s3Service     *s3.S3
+	iamService    *iam.IAM
+	lambdaService *lambda.Lambda
 }
 
 func NewLambdaDeployer(config Config) *LambdaDeployer {
@@ -28,10 +31,11 @@ func NewLambdaDeployer(config Config) *LambdaDeployer {
 	}))
 
 	return &LambdaDeployer{
-		config:     config,
-		awsSession: awsSession,
-		s3Service:  s3.New(awsSession),
-		iamService: iam.New(awsSession),
+		config:        config,
+		awsSession:    awsSession,
+		s3Service:     s3.New(awsSession),
+		iamService:    iam.New(awsSession),
+		lambdaService: lambda.New(awsSession),
 	}
 }
 
@@ -50,18 +54,18 @@ func (self *LambdaDeployer) SetupBuckets() {
 }
 
 func (self *LambdaDeployer) DeployFunction() {
-	/*
-		roleArn := <-createRoleIdempotent(self.iamService, self.config.RoleName)
-		_ = roleArn
-		<-putRolePolicy(self.iamService, self.config.RoleName,
-			self.config.SourceBucketName, self.config.TargetBucketName)
-	*/
+	roleArn :=
+		(<-createRoleIdempotent(self.iamService, self.config.RoleName)).roleArn
+	<-putRolePolicy(self.iamService, self.config.RoleName,
+		self.config.SourceBucketName, self.config.TargetBucketName)
 
-	zip("../deployed")
+	zipPath := zip("../deployed")
+	log.Printf("sha256base64 %s", sha256Base64(zipPath))
+	<-uploadZip(self.lambdaService, zipPath, self.config.FunctionName, roleArn)
 }
 
 type CreateRoleIdempotentReturn struct {
-	arn string
+	roleArn string
 }
 
 type EmptyReturn struct{}
