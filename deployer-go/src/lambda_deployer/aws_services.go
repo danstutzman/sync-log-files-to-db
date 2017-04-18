@@ -56,12 +56,16 @@ func (self *LambdaDeployer) SetupBuckets() {
 func (self *LambdaDeployer) DeployFunction() {
 	roleArn :=
 		(<-createRoleIdempotent(self.iamService, self.config.RoleName)).roleArn
-	<-putRolePolicy(self.iamService, self.config.RoleName,
-		self.config.SourceBucketName, self.config.TargetBucketName)
+	if false {
+		<-putRolePolicy(self.iamService, self.config.RoleName,
+			self.config.SourceBucketName, self.config.TargetBucketName)
 
-	zipPath := zip("../deployed")
-	log.Printf("sha256base64 %s", sha256Base64(zipPath))
-	<-uploadZip(self.lambdaService, zipPath, self.config.FunctionName, roleArn)
+		zipPath := zip("../deployed")
+		log.Printf("sha256base64 %s", sha256Base64(zipPath))
+		<-uploadZip(self.lambdaService, zipPath, self.config.FunctionName, roleArn)
+	}
+	<-addPermission(self.lambdaService, self.config.FunctionName,
+		self.config.SourceBucketName)
 }
 
 type CreateRoleIdempotentReturn struct {
