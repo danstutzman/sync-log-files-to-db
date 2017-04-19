@@ -36,11 +36,11 @@ func zip(pathToDeploy string) string {
 	zipPath := "../deployed/build/" + gitSha1 + ".zip"
 	if _, err := os.Stat(zipPath); os.IsNotExist(err) {
 		zipCommand := []string{"/bin/bash", "-c", `cd ` + pathToDeploy + ` &&
-			npm install &&
 			mkdir -p build &&
-			cat src/CreateThumbnail.js > CreateThumbnail.js &&
-			zip -r -q ../deployer/` + zipPath + ` CreateThumbnail.js node_modules &&
-			rm -f CreateThumbnail.js`}
+			rm -f test &&
+			GOOS=linux GOARCH=amd64 go build test.go &&
+			zip -r -q ../deployer/` + zipPath + ` NodeWrapper.js test &&
+			rm -f test`}
 		log.Printf("Running %s...", strings.Join(zipCommand, " "))
 		cmd := exec.Command(zipCommand[0], zipCommand[1:]...)
 		stdoutReader, err := cmd.StdoutPipe()

@@ -29,7 +29,7 @@ func createFunction(lambdaService *lambda.Lambda, zipPath string, functionName s
 			ZipFile: zipBytes,
 		},
 		FunctionName: aws.String(functionName),
-		Handler:      aws.String(functionName + ".handler"),
+		Handler:      aws.String("NodeWrapper.handler"),
 		Role:         aws.String(roleArn),
 		Runtime:      aws.String("nodejs4.3"),
 		Description:  aws.String(zipPath),

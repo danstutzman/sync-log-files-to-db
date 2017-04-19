@@ -1,8 +1,4 @@
 /deployed/build
-/deployed/node_modules
-/deployed/CreateThumbnail.zip
-
 /CreateThumbnail-data.json
 /HappyFace.jpg
-
 .*.swp
