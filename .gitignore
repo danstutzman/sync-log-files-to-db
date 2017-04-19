@@ -1,4 +1,6 @@
-/deployed/build
 /CreateThumbnail-data.json
+/deployed/build
+/deployed/.idea
+/deployer/.idea
 /HappyFace.jpg
 .*.swp
