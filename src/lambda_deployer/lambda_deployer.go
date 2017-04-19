@@ -47,7 +47,7 @@ func (self *LambdaDeployer) SetupBuckets() {
 		self.config.TargetBucketName)
 
 	<-createSourceBucketFuture
-	copySampleImageFuture := copyToBucket(self.s3Service, "../HappyFace.jpg",
+	copySampleImageFuture := copyToBucket(self.s3Service, "./HappyFace.jpg",
 		self.config.SourceBucketName, "/HappyFace.jpg")
 
 	<-createTargetBucketFuture
@@ -60,7 +60,7 @@ func (self *LambdaDeployer) DeployFunction() {
 	<-putRolePolicy(self.iamService, self.config.RoleName, self.config.PolicyName,
 		self.config.SourceBucketName, self.config.TargetBucketName)
 
-	zipPath := zip("../deployed")
+	zipPath := zip()
 	log.Printf("sha256base64 %s", sha256Base64(zipPath))
 	functionArn := (<-uploadZip(self.lambdaService, zipPath,
 		self.config.FunctionName, roleArn)).functionArn

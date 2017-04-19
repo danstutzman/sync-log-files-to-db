@@ -31,16 +31,18 @@ func findGitSha1(path string) string {
 }
 
 // Returns created zip file
-func zip(pathToDeploy string) string {
-	gitSha1 := findGitSha1(pathToDeploy)
-	zipPath := "../deployed/build/" + gitSha1 + ".zip"
+func zip() string {
+	gitSha1 := findGitSha1(".")
+	zipPath := "build/" + gitSha1 + ".zip"
 	if _, err := os.Stat(zipPath); os.IsNotExist(err) {
-		zipCommand := []string{"/bin/bash", "-c", `cd ` + pathToDeploy + ` &&
-			mkdir -p build &&
-			rm -f test &&
-			GOOS=linux GOARCH=amd64 go build test.go &&
-			zip -r -q ../deployer/` + zipPath + ` NodeWrapper.js test &&
-			rm -f test`}
+		zipCommand := []string{"/bin/bash", "-c", `mkdir -p build &&
+			cp src/NodeWrapper.js build &&
+			rm -f $GOPATH/bin/linux_amd64/deployed build/deployed &&
+			GOOS=linux GOARCH=amd64 go install github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/src/...
+			cp $GOPATH/bin/linux_amd64/deployed build &&
+			cd build &&
+			zip -r -q ../` + zipPath + ` NodeWrapper.js deployed &&
+			rm -f build/deployed`}
 		log.Printf("Running %s...", strings.Join(zipCommand, " "))
 		cmd := exec.Command(zipCommand[0], zipCommand[1:]...)
 		stdoutReader, err := cmd.StdoutPipe()

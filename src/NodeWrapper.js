@@ -1,7 +1,7 @@
 var child_process = require('child_process')
 
 exports.handler = function(event, context) {
-  var proc = child_process.spawn('./test', [ JSON.stringify(event) ])
+  var proc = child_process.spawn('./deployed', [ JSON.stringify(event) ])
   proc.stdout.on('data', function(data) {
     console.error(data.toString().trim())
   })

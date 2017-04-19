@@ -1,6 +1,0 @@
-#!/bin/bash -ex
-cd $GOPATH/src/github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/deployer
-rm -f $GOPATH/bin/deployer
-go vet github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/deployer/src/deployer
-GOBIN=$GOPATH/bin go install -race github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/deployer/src/deployer
-exec $GOPATH/bin/deployer "$@"

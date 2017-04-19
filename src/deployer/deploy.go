@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/deployer/src/lambda_deployer"
+	"github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/src/lambda_deployer"
 	"log"
 	"os"
 )
