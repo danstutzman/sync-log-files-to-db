@@ -3,6 +3,13 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "AH7jcN7pvaPDU6UjHdpT081DDGk=",
+			"path": "cloud.google.com/go/compute/metadata",
+			"revision": "01b9e8cbca61bf2c704946d6f1790ec412519180",
+			"revisionTime": "2017-04-18T04:47:09Z",
+			"tree": true
+		},
+		{
 			"checksumSHA1": "Np7jBYbiK5yhhQHCB2O45txShUk=",
 			"path": "github.com/aws/aws-sdk-go",
 			"revision": "baba9e786eae5ba978f2007f8e718557b29157c8",
@@ -58,6 +65,18 @@
 			"revisionTime": "2017-01-30T11:31:45Z"
 		},
 		{
+			"checksumSHA1": "Y+HGqEkYM15ir+J93MEaHdyFy0c=",
+			"path": "golang.org/x/net/context",
+			"revision": "5602c733f70afc6dcec6766be0d5034d4c4f14de",
+			"revisionTime": "2017-04-13T17:15:43Z"
+		},
+		{
+			"checksumSHA1": "WHc3uByvGaMcnSoI21fhzYgbOgg=",
+			"path": "golang.org/x/net/context/ctxhttp",
+			"revision": "5602c733f70afc6dcec6766be0d5034d4c4f14de",
+			"revisionTime": "2017-04-13T17:15:43Z"
+		},
+		{
 			"checksumSHA1": "vqc3a+oTUGX8PmD0TS+qQ7gmN8I=",
 			"path": "golang.org/x/net/html",
 			"revision": "5602c733f70afc6dcec6766be0d5034d4c4f14de",
@@ -88,5 +107,5 @@
 			"revisionTime": "2017-03-31T22:27:27Z"
 		}
 	],
-	"rootPath": "github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/go"
+	"rootPath": "github.com/danielstutzman/sync-cloudfront-logs-to-bigquery"
 }
