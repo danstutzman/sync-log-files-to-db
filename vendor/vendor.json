@@ -105,6 +105,31 @@
 			"path": "golang.org/x/tools/go/loader",
 			"revision": "663269851cdddc898f963782f74ea574bcd5c814",
 			"revisionTime": "2017-03-31T22:27:27Z"
+		},
+		{
+			"checksumSHA1": "SPLXgBwwK/OJP/n7jBUKm0vkRiY=",
+			"path": "google.golang.org/api/bigquery/v2",
+			"revision": "0b0f5a5147930d092abd132cf09fafa23e8c3942",
+			"revisionTime": "2017-04-18T20:48:14Z",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "C7k1pbU/WU4CBoBwA4EBUnV/iek=",
+			"path": "google.golang.org/api/gensupport",
+			"revision": "0b0f5a5147930d092abd132cf09fafa23e8c3942",
+			"revisionTime": "2017-04-18T20:48:14Z"
+		},
+		{
+			"checksumSHA1": "BWKmb7kGYbfbvXO6E7tCpTh9zKE=",
+			"path": "google.golang.org/api/googleapi",
+			"revision": "0b0f5a5147930d092abd132cf09fafa23e8c3942",
+			"revisionTime": "2017-04-18T20:48:14Z"
+		},
+		{
+			"checksumSHA1": "1K0JxrUfDqAB3MyRiU1LKjfHyf4=",
+			"path": "google.golang.org/api/googleapi/internal/uritemplates",
+			"revision": "0b0f5a5147930d092abd132cf09fafa23e8c3942",
+			"revisionTime": "2017-04-18T20:48:14Z"
 		}
 	],
 	"rootPath": "github.com/danielstutzman/sync-cloudfront-logs-to-bigquery"
