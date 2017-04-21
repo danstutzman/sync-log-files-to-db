@@ -1,10 +1,9 @@
-package main
+package s3
 
 import (
 	"bufio"
 	"compress/gzip"
 	"fmt"
-	"github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/src/storage/s3"
 	"log"
 	"strings"
 )
@@ -14,7 +13,7 @@ const EXPECTED_LINE2_V1 = "#Fields: date time x-edge-location sc-bytes c-ip cs-m
 const EXPECTED_LINE2_V2 = EXPECTED_LINE2_V1 + " x-forwarded-for ssl-protocol ssl-cipher x-edge-response-result-type"
 const EXPECTED_LINE2_V3 = EXPECTED_LINE2_V2 + " cs-protocol-version"
 
-func downloadVisitsForPath(s3Connection *s3.S3Connection, path string) []map[string]string {
+func (s3Connection *S3Connection) DownloadVisitsForPath(path string) []map[string]string {
 
 	body := s3Connection.DownloadPath(path)
 	reader, err := gzip.NewReader(body)

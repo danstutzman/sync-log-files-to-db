@@ -1,7 +1,6 @@
-package main
+package bigquery
 
 import (
-	mybigquery "github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/src/storage/bigquery"
 	bigquery "google.golang.org/api/bigquery/v2"
 )
 
@@ -15,7 +14,7 @@ func maybeNull(s string) bigquery.JsonValue {
 	}
 }
 
-func createVisitsTable(bigqueryConn *mybigquery.BigqueryConnection) {
+func (bigqueryConn *BigqueryConnection) CreateVisitsTable() {
 	bigqueryConn.CreateTable("visits", []*bigquery.TableFieldSchema{
 		{Name: "s3_path", Type: "STRING", Mode: "REQUIRED"},
 		{Name: "datetime", Type: "DATETIME", Mode: "REQUIRED"},
@@ -43,7 +42,7 @@ func createVisitsTable(bigqueryConn *mybigquery.BigqueryConnection) {
 	})
 }
 
-func uploadVisits(bigqueryConn *mybigquery.BigqueryConnection, s3Path string,
+func (bigqueryConn *BigqueryConnection) UploadVisits(s3Path string,
 	visits []map[string]string) {
 
 	rows := make([]*bigquery.TableDataInsertAllRequestRows, 0)
@@ -80,6 +79,6 @@ func uploadVisits(bigqueryConn *mybigquery.BigqueryConnection, s3Path string,
 	}
 
 	bigqueryConn.InsertRows("visits", func() {
-		createVisitsTable(bigqueryConn)
+		bigqueryConn.CreateVisitsTable()
 	}, rows)
 }
