@@ -1,4 +1,6 @@
 /.idea
+/config/Speech-ba6281533dc8.json
+/config/bigquery.json
 /CreateThumbnail-data.json
 /build
 /HappyFace.jpg

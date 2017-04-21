@@ -40,9 +40,11 @@ func zip() string {
 			rm -f $GOPATH/bin/linux_amd64/deployed build/deployed &&
 			GOOS=linux GOARCH=amd64 go install github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/src/...
 			cp $GOPATH/bin/linux_amd64/deployed build &&
+			cp -r config build &&
+			chmod a+r config/* &&
 			cd build &&
-			zip -r -q ../` + zipPath + ` NodeWrapper.js deployed &&
-			rm -f build/deployed`}
+			zip -r -q ../` + zipPath + ` NodeWrapper.js deployed config &&
+			rm -rf build/deployed build/config`}
 		log.Printf("Running %s...", strings.Join(zipCommand, " "))
 		cmd := exec.Command(zipCommand[0], zipCommand[1:]...)
 		stdoutReader, err := cmd.StdoutPipe()

@@ -1,0 +1,5 @@
+{
+  "GcloudPemPath": "config/ProjectName-12345.json",
+  "GcloudProjectId": "project-id-here",
+  "DatasetName": "dataset-name-here"
+}
