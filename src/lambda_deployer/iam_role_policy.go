@@ -30,6 +30,12 @@ func putRolePolicy(iamService *iam.IAM, roleName, policyName, sourceBucket, targ
 				 			 "s3:GetObject"
 				 		],
 				 		"Resource": "arn:aws:s3:::` + sourceBucket + `/*"
+					},					{
+				 		"Effect": "Allow",
+				 		"Action": [
+				 			 "s3:ListBucket"
+				 		],
+				 		"Resource": "arn:aws:s3:::` + sourceBucket + `"
 					},
 					{
 				 		"Effect": "Allow",
