@@ -1,0 +1,5 @@
+{
+  "CredsPath": "config/s3.creds.ini",
+  "Region": "us-east-1",
+  "BucketName": "cloudfront-logs-danstutzman"
+}

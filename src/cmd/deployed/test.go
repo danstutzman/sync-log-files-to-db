@@ -19,10 +19,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error from ReadFile: %s", err)
 	}
-	var options bigquery.Options
-	json.Unmarshal(optionsBytes, &options)
-	bigquery.ValidateOptions(&options)
-	bigqueryConn := bigquery.NewBigqueryConnection(&options)
+
+	var bigqueryOptions bigquery.Options
+	json.Unmarshal(optionsBytes, &bigqueryOptions)
+	bigquery.ValidateOptions(&bigqueryOptions)
+	bigqueryConn := bigquery.NewBigqueryConnection(&bigqueryOptions)
 	log.Printf("Results from SELECT 1: %v",
 		bigqueryConn.Query("SELECT 1", "SELECT 1"))
 
@@ -31,11 +32,13 @@ func main() {
 	for _, record := range events.Records {
 		if record.EventSource == "aws:s3" &&
 			record.EventName == "ObjectCreated:Put" {
-			s3Connection := s3.NewS3Connection(record.S3.Bucket.Name)
+			s3Connection := s3.NewS3Connection(&s3.Options{
+				BucketName: record.S3.Bucket.Name,
+			})
 			//log.Printf("ListPaths: %v", s3Connection.ListPaths())
 			s3Path := record.S3.Object.Key
-			visits := downloadVisitsForPath(s3Connection, s3Path)
-			uploadVisits(bigqueryConn, s3Path, visits)
+			visits := s3Connection.DownloadVisitsForPath(s3Path)
+			bigqueryConn.UploadVisits(s3Path, visits)
 			s3Connection.DeletePath(s3Path)
 		} else {
 			log.Fatalf("Don't know how to handle event EventSource:%s EventName:%s",

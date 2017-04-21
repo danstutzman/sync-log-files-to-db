@@ -8,9 +8,10 @@ import (
 
 func main() {
 	if len(os.Args) < 1+1 {
-		log.Fatalf("Usage: " + os.Args[0] + " up|down")
+		log.Fatalf("Usage: " + os.Args[0] +
+			" [remove-function] [install-function] [sync-existing-logs]")
 	}
-	verb := os.Args[1]
+	verbs := os.Args[1:]
 
 	deployer := lambda_deployer.NewLambdaDeployer(lambda_deployer.Config{
 		BucketName:   "cloudfront-logs-danstutzman",
@@ -19,14 +20,17 @@ func main() {
 		PolicyName:   "lambda-SyncCloudfrontLogsToBigquery-execution-access",
 	})
 
-	switch verb {
-	case "down":
-		deployer.DeleteEverything()
-	case "up":
-		deployer.SetupBucket()
-		deployer.DeployFunction()
-	default:
-		log.Fatalf("Unknown verb '%s'; expected up or down", verb)
+	for _, verb := range verbs {
+		switch verb {
+		case "remove-function":
+			deployer.RemoveFunction()
+		case "install-function":
+			deployer.InstallFunction()
+		case "sync-existing-logs":
+			deployer.SyncExistingLogs()
+		default:
+			log.Fatalf("Unknown verb '%s'; expected up or down", verb)
+		}
 	}
 
 	log.Printf("%s completed successfully", os.Args[0])

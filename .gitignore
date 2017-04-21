@@ -1,6 +1,7 @@
 /.idea
 /config/Speech-ba6281533dc8.json
 /config/bigquery.json
+/config/s3.creds.ini
 /CreateThumbnail-data.json
 /build
 .*.swp

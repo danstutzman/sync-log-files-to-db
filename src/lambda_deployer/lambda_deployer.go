@@ -1,10 +1,14 @@
 package lambda_deployer
 
 import (
+	"encoding/json"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/src/storage/bigquery"
+	my_s3 "github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/src/storage/s3"
+	"io/ioutil"
 	"log"
 )
 
@@ -39,11 +43,7 @@ func NewLambdaDeployer(config Config) *LambdaDeployer {
 	}
 }
 
-func (self *LambdaDeployer) SetupBucket() {
-	<-createBucket(self.s3Service, self.config.BucketName)
-}
-
-func (self *LambdaDeployer) DeployFunction() {
+func (self *LambdaDeployer) InstallFunction() {
 	roleArn :=
 		(<-createRoleIdempotent(self.iamService, self.config.RoleName)).roleArn
 	<-putRolePolicy(self.iamService, self.config.RoleName, self.config.PolicyName,
@@ -68,7 +68,7 @@ type CreateRoleIdempotentReturn struct {
 
 type EmptyReturn struct{}
 
-func (self *LambdaDeployer) DeleteEverything() {
+func (self *LambdaDeployer) RemoveFunction() {
 	//future := deleteBucket(self.s3Service, self.config.BucketName)
 
 	<-deleteFunction(self.lambdaService, self.config.FunctionName)
@@ -77,4 +77,30 @@ func (self *LambdaDeployer) DeleteEverything() {
 	<-deleteRole(self.iamService, self.config.RoleName)
 
 	//<-future
+}
+
+func (self *LambdaDeployer) SyncExistingLogs() {
+	bigqueryOptionsBytes, err := ioutil.ReadFile("config/bigquery.json")
+	if err != nil {
+		log.Fatalf("Error from ReadFile: %s", err)
+	}
+	var bigqueryOptions bigquery.Options
+	json.Unmarshal(bigqueryOptionsBytes, &bigqueryOptions)
+	bigquery.ValidateOptions(&bigqueryOptions)
+	bigqueryConn := bigquery.NewBigqueryConnection(&bigqueryOptions)
+
+	s3OptionsBytes, err := ioutil.ReadFile("config/s3.json")
+	if err != nil {
+		log.Fatalf("Error from ReadFile: %s", err)
+	}
+	var s3Options my_s3.Options
+	json.Unmarshal(s3OptionsBytes, &s3Options)
+	my_s3.ValidateOptions(&s3Options)
+	s3Connection := my_s3.NewS3Connection(&s3Options)
+
+	for _, path := range s3Connection.ListPaths() {
+		visits := s3Connection.DownloadVisitsForPath(path)
+		bigqueryConn.UploadVisits(path, visits)
+		s3Connection.DeletePath(path)
+	}
 }
