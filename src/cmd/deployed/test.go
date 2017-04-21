@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 1 + 1 {
+	if len(os.Args) < 1+1 {
 		log.Fatalf("Expected arg 1 to be JSON of event")
 	}
 	events := decodeEvents(os.Args[1])
@@ -30,7 +30,7 @@ func main() {
 
 	for _, record := range events.Records {
 		if record.EventSource == "aws:s3" &&
-				record.EventName == "ObjectCreated:Put" {
+			record.EventName == "ObjectCreated:Put" {
 			s3Connection := s3.NewS3Connection(record.S3.Bucket.Name)
 			//log.Printf("ListPaths: %v", s3Connection.ListPaths())
 			visits := downloadVisitsForPath(s3Connection, record.S3.Object.Key)
