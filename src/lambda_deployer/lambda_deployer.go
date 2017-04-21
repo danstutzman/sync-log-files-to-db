@@ -9,11 +9,10 @@ import (
 )
 
 type Config struct {
-	SourceBucketName string
-	TargetBucketName string
-	FunctionName     string
-	RoleName         string
-	PolicyName       string
+	BucketName   string
+	FunctionName string
+	RoleName     string
+	PolicyName   string
 }
 
 type LambdaDeployer struct {
@@ -41,35 +40,27 @@ func NewLambdaDeployer(config Config) *LambdaDeployer {
 }
 
 func (self *LambdaDeployer) SetupBuckets() {
-	createSourceBucketFuture := createBucket(self.s3Service,
-		self.config.SourceBucketName)
-	createTargetBucketFuture := createBucket(self.s3Service,
-		self.config.TargetBucketName)
-
-	<-createSourceBucketFuture
-	copySampleImageFuture := copyToBucket(self.s3Service, "./HappyFace.jpg",
-		self.config.SourceBucketName, "/HappyFace.jpg")
-
-	<-createTargetBucketFuture
-	<-copySampleImageFuture
+	<-createBucket(self.s3Service, self.config.BucketName)
+	<-copyToBucket(self.s3Service, "./HappyFace.jpg",
+		self.config.BucketName, "/HappyFace.jpg")
 }
 
 func (self *LambdaDeployer) DeployFunction() {
 	roleArn :=
 		(<-createRoleIdempotent(self.iamService, self.config.RoleName)).roleArn
 	<-putRolePolicy(self.iamService, self.config.RoleName, self.config.PolicyName,
-		self.config.SourceBucketName, self.config.TargetBucketName)
+		self.config.BucketName)
 
 	zipPath := zip()
 	log.Printf("sha256base64 %s", sha256Base64(zipPath))
 	functionArn := (<-uploadZip(self.lambdaService, zipPath,
 		self.config.FunctionName, roleArn)).functionArn
 	<-addPermission(self.lambdaService, self.config.FunctionName,
-		self.config.SourceBucketName)
-	<-putBucketNotification(self.s3Service, self.config.SourceBucketName,
+		self.config.BucketName)
+	<-putBucketNotification(self.s3Service, self.config.BucketName,
 		functionArn)
 	logText := (<-invokeFunction(self.lambdaService, self.config.FunctionName,
-		self.config.SourceBucketName)).logText
+		self.config.BucketName)).logText
 	log.Printf("LogText: %s", logText)
 }
 
@@ -80,14 +71,12 @@ type CreateRoleIdempotentReturn struct {
 type EmptyReturn struct{}
 
 func (self *LambdaDeployer) DeleteEverything() {
-	future1 := deleteBucket(self.s3Service, self.config.SourceBucketName)
-	future2 := deleteBucket(self.s3Service, self.config.TargetBucketName)
+	//future := deleteBucket(self.s3Service, self.config.BucketName)
 
 	<-deleteFunction(self.lambdaService, self.config.FunctionName)
 	<-deleteRolePolicy(self.iamService, self.config.RoleName,
 		self.config.PolicyName)
 	<-deleteRole(self.iamService, self.config.RoleName)
 
-	<-future1
-	<-future2
+	//<-future
 }

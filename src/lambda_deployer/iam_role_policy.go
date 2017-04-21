@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-func putRolePolicy(iamService *iam.IAM, roleName, policyName, sourceBucket, targetBucket string) chan EmptyReturn {
+func putRolePolicy(iamService *iam.IAM, roleName, policyName, bucketName string) chan EmptyReturn {
 	future := make(chan EmptyReturn)
 	go func() {
 		log.Printf("Put role policy on %s...", roleName)
@@ -29,20 +29,13 @@ func putRolePolicy(iamService *iam.IAM, roleName, policyName, sourceBucket, targ
 				 		"Action": [
 				 			 "s3:GetObject"
 				 		],
-				 		"Resource": "arn:aws:s3:::` + sourceBucket + `/*"
+				 		"Resource": "arn:aws:s3:::` + bucketName + `/*"
 					},					{
 				 		"Effect": "Allow",
 				 		"Action": [
 				 			 "s3:ListBucket"
 				 		],
-				 		"Resource": "arn:aws:s3:::` + sourceBucket + `"
-					},
-					{
-				 		"Effect": "Allow",
-				 		"Action": [
-				 			 "s3:PutObject"
-				 		],
-				 		"Resource": "arn:aws:s3:::` + targetBucket + `/*"
+				 		"Resource": "arn:aws:s3:::` + bucketName + `"
 					}
 				]
 			}`),

@@ -11,7 +11,7 @@ type InvokeFunctionReturn struct {
 	logText string
 }
 
-func invokeFunction(lambdaService *lambda.Lambda, functionName string, sourceBucketName string) chan InvokeFunctionReturn {
+func invokeFunction(lambdaService *lambda.Lambda, functionName string, bucketName string) chan InvokeFunctionReturn {
 	future := make(chan InvokeFunctionReturn)
 	go func() {
 		log.Printf("Invoking function %s...", functionName)
@@ -41,17 +41,16 @@ func invokeFunction(lambdaService *lambda.Lambda, functionName string, sourceBuc
 								 "s3SchemaVersion":"1.0",
 								 "configurationId":"testConfigRule",
 								 "bucket":{
-										"name":"` + sourceBucketName + `",
+										"name":"` + bucketName + `",
 										"ownerIdentity":{
 											 "principalId":"A3NL1KOZZKExample"
 										},
-										"arn":"arn:aws:s3:::` + sourceBucketName + `"
+										"arn":"arn:aws:s3:::` + bucketName + `"
 								 },
 								 "object":{
-										"key":"HappyFace.jpg",
-										"size":1024,
-										"eTag":"d41d8cd98f00b204e9800998ecf8427e",
-										"versionId":"096fKKXTRTtl3on89fVO.nfljtsv6qko"
+										"key":"/basicruby.com/E1DVQL5S7VXQC0.2017-04-21-03.d9ef40af.gz",
+										"size":556,
+										"eTag":"efe3798f70e70bb69cadbcdc1f61d19c"
 								 }
 							}
 					 }

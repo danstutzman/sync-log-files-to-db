@@ -13,11 +13,10 @@ func main() {
 	verb := os.Args[1]
 
 	deployer := lambda_deployer.NewLambdaDeployer(lambda_deployer.Config{
-		SourceBucketName: "danstutzman-lambda-example",
-		TargetBucketName: "danstutzman-lambda-exampleresized",
-		FunctionName:     "CreateThumbnail",
-		RoleName:         "lambda-CreateThumbnail-execution",
-		PolicyName:       "lambda-CreateThumbnail-execution-access",
+		BucketName:   "cloudfront-logs-danstutzman",
+		FunctionName: "CreateThumbnail",
+		RoleName:     "lambda-CreateThumbnail-execution",
+		PolicyName:   "lambda-CreateThumbnail-execution-access",
 	})
 
 	switch verb {
