@@ -39,10 +39,8 @@ func NewLambdaDeployer(config Config) *LambdaDeployer {
 	}
 }
 
-func (self *LambdaDeployer) SetupBuckets() {
+func (self *LambdaDeployer) SetupBucket() {
 	<-createBucket(self.s3Service, self.config.BucketName)
-	<-copyToBucket(self.s3Service, "./HappyFace.jpg",
-		self.config.BucketName, "/HappyFace.jpg")
 }
 
 func (self *LambdaDeployer) DeployFunction() {

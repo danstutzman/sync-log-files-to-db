@@ -23,7 +23,7 @@ func main() {
 	case "down":
 		deployer.DeleteEverything()
 	case "up":
-		deployer.SetupBuckets()
+		deployer.SetupBucket()
 		deployer.DeployFunction()
 	default:
 		log.Fatalf("Unknown verb '%s'; expected up or down", verb)
