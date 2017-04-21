@@ -40,6 +40,7 @@ func zip() string {
 			rm -f $GOPATH/bin/linux_amd64/deployed build/deployed &&
 			GOOS=linux GOARCH=amd64 go install github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/src/...
 			cp $GOPATH/bin/linux_amd64/deployed build &&
+			rm -rf build/config &&
 			cp -r config build &&
 			chmod a+r config/* &&
 			cd build &&
