@@ -17,7 +17,7 @@ func putBucketNotification(s3Service *s3.S3, bucketName string, functionArn stri
 					CloudFunctionConfiguration: &s3.CloudFunctionConfiguration{
 						CloudFunction: aws.String(functionArn),
 						Event:         aws.String("s3:ObjectCreated:*"),
-						Id:            aws.String("CreateThumbnailStartingEvent"),
+						Id:            aws.String("SyncCloudfrontLogsToBigqueryTestEvent"),
 					},
 				},
 			})

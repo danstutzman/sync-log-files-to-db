@@ -14,9 +14,9 @@ func main() {
 
 	deployer := lambda_deployer.NewLambdaDeployer(lambda_deployer.Config{
 		BucketName:   "cloudfront-logs-danstutzman",
-		FunctionName: "CreateThumbnail",
-		RoleName:     "lambda-CreateThumbnail-execution",
-		PolicyName:   "lambda-CreateThumbnail-execution-access",
+		FunctionName: "SyncCloudfrontLogsToBigquery",
+		RoleName:     "lambda-SyncCloudfrontLogsToBigquery-execution",
+		PolicyName:   "lambda-SyncCloudfrontLogsToBigquery-execution-access",
 	})
 
 	switch verb {
