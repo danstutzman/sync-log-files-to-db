@@ -27,7 +27,8 @@ func putRolePolicy(iamService *iam.IAM, roleName, policyName, bucketName string)
 					{
 				 		"Effect": "Allow",
 				 		"Action": [
-				 			 "s3:GetObject"
+				 			 "s3:GetObject",
+				 			 "s3:DeleteObject"
 				 		],
 				 		"Resource": "arn:aws:s3:::` + bucketName + `/*"
 					},					{

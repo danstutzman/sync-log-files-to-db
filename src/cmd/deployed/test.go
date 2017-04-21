@@ -33,9 +33,10 @@ func main() {
 			record.EventName == "ObjectCreated:Put" {
 			s3Connection := s3.NewS3Connection(record.S3.Bucket.Name)
 			//log.Printf("ListPaths: %v", s3Connection.ListPaths())
-			visits := downloadVisitsForPath(s3Connection, record.S3.Object.Key)
-			log.Printf("Visits: %s", visits)
-
+			s3Path := record.S3.Object.Key
+			visits := downloadVisitsForPath(s3Connection, s3Path)
+			uploadVisits(bigqueryConn, s3Path, visits)
+			s3Connection.DeletePath(s3Path)
 		} else {
 			log.Fatalf("Don't know how to handle event EventSource:%s EventName:%s",
 				record.EventSource, record.EventName)
