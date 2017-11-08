@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"strconv"
-	"time"
 
 	"github.com/cenkalti/backoff"
 	"golang.org/x/oauth2"
@@ -168,49 +167,20 @@ func (conn *BigqueryConnection) InsertRows(tableName string,
 	}, backoff.NewExponentialBackOff())
 
 	if err != nil {
-		log.Println(err)
 		if err.Error() == fmt.Sprintf(
 			"googleapi: Error 404: Not found: Dataset %s:%s, notFound",
 			conn.projectId, conn.datasetName) {
 
 			createDataset()
-			log.Printf("Waiting 120 seconds for BigQuery to catch up...")
-			time.Sleep(120 * time.Second)
-
-			createTable()
-			log.Printf("Waiting 120 seconds for BigQuery to catch up...")
-			time.Sleep(120 * time.Second)
-
+			panic(fmt.Errorf("Created dataset; maybe wait before restarting"))
 		} else if err.Error() == fmt.Sprintf(
 			"googleapi: Error 404: Not found: Table %s:%s.%s, notFound",
 			conn.projectId, conn.datasetName, tableName) {
 
 			createTable()
-			log.Printf("Waiting 120 seconds for BigQuery to catch up...")
-			time.Sleep(120 * time.Second)
-
+			panic(fmt.Errorf("Created table; maybe wait before restarting"))
 		} else {
 			panic(err)
-		}
-
-		// Now retry the insert
-		err = backoff.Retry(func() error {
-			_, err := conn.service.Tabledata.InsertAll(conn.projectId, conn.datasetName,
-				tableName, &bigquery.TableDataInsertAllRequest{Rows: rows}).Do()
-			if err != nil {
-				err2, isGoogleApiError := err.(*googleapi.Error)
-				if isGoogleApiError && (err2.Code == 500 || err2.Code == 503) {
-					log.Printf("Got intermittent error (backoff will retry): %s", err2)
-					return err // Backoff will retry
-				} else {
-					return backoff.Permanent(err) // Stop backoff
-				}
-			}
-
-			return nil // Success
-		}, backoff.NewExponentialBackOff())
-		if err != nil {
-			log.Fatalf("Error %s inserting rows", err)
 		}
 	}
 }
