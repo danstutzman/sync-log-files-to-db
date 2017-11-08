@@ -42,7 +42,7 @@ sync {
   exclude = { '.*.swp', '.*.swx' },
   rsync = {
     binary = "$PWD/rsync.sh",
-    archive  = true,
+    archive  = false,
     compress = true,
     rsh = "ssh -i $SSH_KEY -o StrictHostKeyChecking=no"
   }
