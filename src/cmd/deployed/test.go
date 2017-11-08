@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/src/storage/bigquery"
-	"github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/src/storage/s3"
+	"github.com/danielstutzman/sync-logs-from-s3/src/storage/bigquery"
+	"github.com/danielstutzman/sync-logs-from-s3/src/storage/s3"
 	"io/ioutil"
 	"log"
 	"os"

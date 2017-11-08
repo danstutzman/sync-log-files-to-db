@@ -38,7 +38,7 @@ func zip() string {
 		zipCommand := []string{"/bin/bash", "-c", `mkdir -p build &&
 			cp src/NodeWrapper.js build &&
 			rm -f $GOPATH/bin/linux_amd64/deployed build/deployed &&
-			GOOS=linux GOARCH=amd64 go install github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/src/...
+			GOOS=linux GOARCH=amd64 go install github.com/danielstutzman/sync-logs-from-s3/src/...
 			cp $GOPATH/bin/linux_amd64/deployed build &&
 			rm -rf build/config &&
 			cp -r config build &&

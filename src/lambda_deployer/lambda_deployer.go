@@ -6,8 +6,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/src/storage/bigquery"
-	my_s3 "github.com/danielstutzman/sync-cloudfront-logs-to-bigquery/src/storage/s3"
+	"github.com/danielstutzman/sync-logs-from-s3/src/storage/bigquery"
+	my_s3 "github.com/danielstutzman/sync-logs-from-s3/src/storage/s3"
 	"io/ioutil"
 	"log"
 )
