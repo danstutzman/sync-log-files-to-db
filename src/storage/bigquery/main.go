@@ -128,7 +128,7 @@ func (conn *BigqueryConnection) CreateTable(tableName string,
 
 	if err != nil {
 		if err.Error() == fmt.Sprintf(
-			"Error 409: Already Exists: Table %s:%s.%s, duplicate",
+			"googleapi: Error 409: Already Exists: Table %s:%s.%s, duplicate",
 			conn.projectId, conn.datasetName, tableName) {
 			// Ignore error
 		} else {
