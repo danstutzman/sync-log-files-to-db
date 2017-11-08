@@ -1,6 +1,9 @@
 #!/bin/bash -ex
+
+EXECUTABLE=sync-logs-from-s3
+
 cd $GOPATH/src/github.com/danielstutzman/sync-logs-from-s3
 go vet github.com/danielstutzman/sync-logs-from-s3/src/...
-rm -f $GOPATH/bin/deployer
+rm -f $GOPATH/bin/$EXECUTABLE
 GOBIN=$GOPATH/bin go install -race github.com/danielstutzman/sync-logs-from-s3/src/...
-exec $GOPATH/bin/deployer "$@"
+exec $GOPATH/bin/$EXECUTABLE "$@"
