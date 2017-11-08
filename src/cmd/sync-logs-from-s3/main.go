@@ -9,7 +9,7 @@ import (
 	my_s3 "github.com/danielstutzman/sync-logs-from-s3/src/storage/s3"
 )
 
-const NUM_PATHS_PER_PAGE = 100
+const NUM_PATHS_PER_PAGE = 1000
 
 func main() {
 	bigqueryOptionsBytes, err := ioutil.ReadFile("config/bigquery.json")
@@ -39,7 +39,6 @@ func main() {
 		bigqueryConn.UploadVisits(visits)
 	}
 	for _, path := range pageOfPaths {
-		_ = path
-		// s3Connection.DeletePath(path)
+		s3Connection.DeletePath(path)
 	}
 }
