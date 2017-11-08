@@ -4,7 +4,7 @@ SSH_KEY=/Users/dan/.ssh/vultr
 REMOTE_HOST=build.danstutzman.com
 REMOTE_GOPATH=/root/gopath
 REMOTE_DIR=$REMOTE_GOPATH/src/github.com/danielstutzman/sync-logs-from-s3
-EXECUTABLE=deployed
+EXECUTABLE=sync-logs-from-s3
 
 sudo ls # get sudo password at the beginning
 
