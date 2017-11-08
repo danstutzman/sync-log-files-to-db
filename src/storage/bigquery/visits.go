@@ -70,7 +70,8 @@ func (bigqueryConn *BigqueryConnection) UploadVisits(visits []map[string]string)
 		rows = append(rows, row)
 	}
 
-	bigqueryConn.InsertRows("visits", func() {
-		bigqueryConn.CreateVisitsTable()
-	}, rows)
+	bigqueryConn.InsertRows("visits",
+		func() { bigqueryConn.CreateDataset() },
+		func() { bigqueryConn.CreateVisitsTable() },
+		rows)
 }

@@ -2,15 +2,16 @@ package bigquery
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
+	"strconv"
+	"time"
+
 	"github.com/cenkalti/backoff"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	bigquery "google.golang.org/api/bigquery/v2"
 	"google.golang.org/api/googleapi"
-	"io/ioutil"
-	"log"
-	"strconv"
-	"time"
 )
 
 type BigqueryConnection struct {
@@ -75,18 +76,40 @@ func (conn *BigqueryConnection) Query(sql, description string) []*bigquery.Table
 		if err != nil {
 			err2, isGoogleApiError := err.(*googleapi.Error)
 			if isGoogleApiError && (err2.Code == 500 || err2.Code == 503) {
-				// then let backoff retry the query
+				log.Printf("Got intermittent error (backoff will retry): %s", err2)
+				return err
 			} else {
-				log.Fatalf("Error %s; query was %s", err, sql)
+				return backoff.Permanent(err)
 			}
+		} else {
+			return nil // success
 		}
-		return err
 	}, backoff.NewExponentialBackOff())
 	if err != nil {
-		panic(err)
+		log.Fatalf("Error %s; query was %s", err, sql)
 	}
 
 	return response.Rows
+}
+
+func (conn *BigqueryConnection) CreateDataset() {
+	log.Printf("Creating %s dataset...", conn.datasetName)
+	_, err := conn.service.Datasets.Insert(conn.projectId, &bigquery.Dataset{
+		DatasetReference: &bigquery.DatasetReference{
+			ProjectId: conn.projectId,
+			DatasetId: conn.datasetName,
+		},
+	}).Do()
+
+	if err != nil {
+		if err.Error() == fmt.Sprintf(
+			"googleapi: Error 409: Already Exists: Dataset %s:%s, duplicate",
+			conn.projectId, conn.datasetName) {
+			// Ignore error
+		} else {
+			panic(err)
+		}
+	}
 }
 
 func (conn *BigqueryConnection) CreateTable(tableName string,
@@ -102,63 +125,92 @@ func (conn *BigqueryConnection) CreateTable(tableName string,
 				TableId:   tableName,
 			},
 		}).Do()
-	if err != nil {
-		panic(err)
-	}
 
-	log.Printf("Waiting 30 seconds for BigQuery to catch up...")
-	time.Sleep(30 * time.Second)
+	if err != nil {
+		if err.Error() == fmt.Sprintf(
+			"Error 409: Already Exists: Table %s:%s.%s, duplicate",
+			conn.projectId, conn.datasetName, tableName) {
+			// Ignore error
+		} else {
+			panic(err)
+		}
+	}
 }
 
 func (conn *BigqueryConnection) InsertRows(tableName string,
-	createTable func(), rows []*bigquery.TableDataInsertAllRequestRows) {
+	createDataset func(), createTable func(), rows []*bigquery.TableDataInsertAllRequestRows) {
 
 	var err error
 	err = backoff.Retry(func() error {
 		log.Printf("Inserting rows to %s...", tableName)
-		_, err := conn.service.Tabledata.InsertAll(conn.projectId, conn.datasetName,
+		result, err := conn.service.Tabledata.InsertAll(conn.projectId, conn.datasetName,
 			tableName, &bigquery.TableDataInsertAllRequest{Rows: rows}).Do()
 		if err != nil {
 			err2, isGoogleApiError := err.(*googleapi.Error)
 			if isGoogleApiError && (err2.Code == 500 || err2.Code == 503) {
-				// then let backoff retry the query
+				log.Printf("Got intermittent error (backoff will retry): %s", err2)
+				return err // Retry with backoff
 			} else {
-				log.Fatalf("Error %s inserting rows", err)
+				return backoff.Permanent(err) // Stop backoff
 			}
 		}
-		return err
+
+		if len(result.InsertErrors) > 0 {
+			for _, errorGroup := range result.InsertErrors {
+				for _, e := range errorGroup.Errors {
+					log.Printf("InsertError: %v, %v", e.Message, e.Reason)
+				}
+			}
+			return backoff.Permanent(fmt.Errorf("Got InsertErrors"))
+		}
+
+		return nil // Success
 	}, backoff.NewExponentialBackOff())
-	if err != nil {
-		panic(err)
-	}
 
 	if err != nil {
 		log.Println(err)
 		if err.Error() == fmt.Sprintf(
+			"googleapi: Error 404: Not found: Dataset %s:%s, notFound",
+			conn.projectId, conn.datasetName) {
+
+			createDataset()
+			log.Printf("Waiting 120 seconds for BigQuery to catch up...")
+			time.Sleep(120 * time.Second)
+
+			createTable()
+			log.Printf("Waiting 120 seconds for BigQuery to catch up...")
+			time.Sleep(120 * time.Second)
+
+		} else if err.Error() == fmt.Sprintf(
 			"googleapi: Error 404: Not found: Table %s:%s.%s, notFound",
 			conn.projectId, conn.datasetName, tableName) {
 
 			createTable()
+			log.Printf("Waiting 120 seconds for BigQuery to catch up...")
+			time.Sleep(120 * time.Second)
 
-			// Now retry the insert
-			err = backoff.Retry(func() error {
-				_, err := conn.service.Tabledata.InsertAll(conn.projectId, conn.datasetName,
-					tableName, &bigquery.TableDataInsertAllRequest{Rows: rows}).Do()
-				if err != nil {
-					err2, isGoogleApiError := err.(*googleapi.Error)
-					if isGoogleApiError && (err2.Code == 500 || err2.Code == 503) {
-						// then let backoff retry the query
-					} else {
-						log.Fatalf("Error %s inserting rows", err)
-					}
-				}
-				return err
-			}, backoff.NewExponentialBackOff())
-			if err != nil {
-				panic(err)
-			}
 		} else {
 			panic(err)
+		}
+
+		// Now retry the insert
+		err = backoff.Retry(func() error {
+			_, err := conn.service.Tabledata.InsertAll(conn.projectId, conn.datasetName,
+				tableName, &bigquery.TableDataInsertAllRequest{Rows: rows}).Do()
+			if err != nil {
+				err2, isGoogleApiError := err.(*googleapi.Error)
+				if isGoogleApiError && (err2.Code == 500 || err2.Code == 503) {
+					log.Printf("Got intermittent error (backoff will retry): %s", err2)
+					return err // Backoff will retry
+				} else {
+					return backoff.Permanent(err) // Stop backoff
+				}
+			}
+
+			return nil // Success
+		}, backoff.NewExponentialBackOff())
+		if err != nil {
+			log.Fatalf("Error %s inserting rows", err)
 		}
 	}
 }
