@@ -1,11 +1,11 @@
 {
   "S3": {
-    "CredsPath": "config/s3.creds.ini",
+    "CredsPath": "./s3.creds.ini",
     "Region": "us-east-1",
     "BucketName": "belugacdn-logs-danstutzman"
   },
   "BigQuery": {
-    "GcloudPemPath": "config/ProjectName-12345.json",
+    "GcloudPemPath": "./ProjectName-12345.json",
     "GcloudProjectId": "project-id-here",
     "DatasetName": "dataset-name-here"
   }

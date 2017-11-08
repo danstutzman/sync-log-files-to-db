@@ -21,6 +21,7 @@ func main() {
 	if len(os.Args) < 1+1 {
 		log.Fatalf("First argument should be config.json")
 	}
+	configPath := os.Args[1]
 
 	var config = &Config{}
 	configJson, err := ioutil.ReadFile(os.Args[1])
@@ -33,10 +34,10 @@ func main() {
 	}
 
 	bigquery.ValidateOptions(&config.Bigquery)
-	bigqueryConn := bigquery.NewBigqueryConnection(&config.Bigquery)
+	bigqueryConn := bigquery.NewBigqueryConnection(&config.Bigquery, configPath)
 
 	my_s3.ValidateOptions(&config.S3)
-	s3Connection := my_s3.NewS3Connection(&config.S3)
+	s3Connection := my_s3.NewS3Connection(&config.S3, configPath)
 
 	visits := []map[string]string{}
 	pageOfPaths := s3Connection.ListPaths(NUM_PATHS_PER_PAGE)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"path"
 	"strconv"
 
 	"github.com/cenkalti/backoff"
@@ -39,8 +40,9 @@ func ParseFloat64(s string) float64 {
 	return f
 }
 
-func NewBigqueryConnection(opts *Options) *BigqueryConnection {
-	pemKeyBytes, err := ioutil.ReadFile(opts.GcloudPemPath)
+func NewBigqueryConnection(opts *Options, configPath string) *BigqueryConnection {
+	gcloudPemPath := path.Join(path.Dir(configPath), opts.GcloudPemPath)
+	pemKeyBytes, err := ioutil.ReadFile(gcloudPemPath)
 	if err != nil {
 		log.Fatalf("Error from ioutil.ReadFile: %s", err)
 	}

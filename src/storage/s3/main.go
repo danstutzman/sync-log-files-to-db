@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"path"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -18,13 +19,14 @@ type S3Connection struct {
 	bucketName string
 }
 
-func NewS3Connection(opts *Options) *S3Connection {
+func NewS3Connection(opts *Options, configPath string) *S3Connection {
 	log.Printf("Creating AWS session...")
 	config := aws.Config{
 		Region: aws.String(opts.Region),
 	}
 	if opts.CredsPath != "" {
-		config.Credentials = credentials.NewSharedCredentials(opts.CredsPath, "")
+		credsPath := path.Join(path.Dir(configPath), opts.CredsPath)
+		config.Credentials = credentials.NewSharedCredentials(credsPath, "")
 	}
 	session, err := session.NewSessionWithOptions(session.Options{
 		Config: config,
