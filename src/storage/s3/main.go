@@ -2,14 +2,15 @@ package s3
 
 import (
 	"fmt"
+	"io"
+	"log"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/cenkalti/backoff"
-	"io"
-	"log"
 )
 
 type S3Connection struct {
@@ -38,14 +39,15 @@ func NewS3Connection(opts *Options) *S3Connection {
 	}
 }
 
-func (conn *S3Connection) ListPaths() []string {
+func (conn *S3Connection) ListPaths(maxKeys int64) []string {
 	var response *s3.ListObjectsV2Output
 	var err error
 
 	err = backoff.Retry(func() error {
 		log.Printf("Listing objects in s3://%s...", conn.bucketName)
 		response, err = conn.service.ListObjectsV2(&s3.ListObjectsV2Input{
-			Bucket: aws.String(conn.bucketName),
+			Bucket:  aws.String(conn.bucketName),
+			MaxKeys: aws.Int64(maxKeys),
 		})
 		if err != nil {
 			err2, isRequestFailure := err.(awserr.RequestFailure)
