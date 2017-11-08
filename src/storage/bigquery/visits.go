@@ -16,7 +16,6 @@ func maybeNull(s string) bigquery.JsonValue {
 
 func (bigqueryConn *BigqueryConnection) CreateVisitsTable() {
 	bigqueryConn.CreateTable("visits", []*bigquery.TableFieldSchema{
-		{Name: "s3_path", Type: "STRING", Mode: "REQUIRED"},
 		{Name: "time", Type: "TIMESTAMP", Mode: "REQUIRED"},
 		{Name: "duration", Type: "FLOAT", Mode: "REQUIRED"},
 		{Name: "trace", Type: "STRING", Mode: "REQUIRED"},
@@ -46,7 +45,6 @@ func (bigqueryConn *BigqueryConnection) UploadVisits(visits []map[string]string)
 		row := &bigquery.TableDataInsertAllRequestRows{
 			InsertId: visit["trace"],
 			Json: map[string]bigquery.JsonValue{
-				"s3_path":            visit["s3_path"],
 				"time":               visit["time"],
 				"duration":           visit["duration"],
 				"trace":              visit["trace"],

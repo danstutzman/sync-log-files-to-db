@@ -20,9 +20,7 @@ func (s3Connection *S3Connection) DownloadVisitsForPath(path string) []map[strin
 
 	visits := []map[string]string{}
 	for scanner.Scan() {
-		visit := map[string]string{
-			"s3_path": path,
-		}
+		visit := map[string]string{}
 		err := json.Unmarshal([]byte(scanner.Text()), &visit)
 		if err != nil {
 			panic(fmt.Errorf("Error from json.Unmarshal: %s", err))
