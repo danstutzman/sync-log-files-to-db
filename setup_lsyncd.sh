@@ -24,7 +24,16 @@ cat >rsync.sh <<EOF
 RSYNC_RESULT=$?
 (
   if [ \$RSYNC_RESULT -eq 0 ]; then
-    ssh -i $SSH_KEY root@$REMOTE_HOST 'rm -f $REMOTE_GOPATH/bin/$EXECUTABLE && cd $REMOTE_DIR && GOPATH=$REMOTE_GOPATH CGO_ENABLED=0 go install -tags netgo -v ./... && ldd $REMOTE_GOPATH/bin/$EXECUTABLE | grep -q "not a dynamic executable"'
+    ssh -i $SSH_KEY root@$REMOTE_HOST <<EOF2
+      set -ex
+      rm -f $REMOTE_GOPATH/bin/$EXECUTABLE
+      cd $REMOTE_DIR
+      GOPATH=$REMOTE_GOPATH CGO_ENABLED=0 \
+        go install -tags netgo -v -ldflags="-s -w" \
+        ./...
+      ldd $REMOTE_GOPATH/bin/$EXECUTABLE \
+        | grep -q "not a dynamic executable"
+EOF2
     osascript -e "display notification \"\" with title \"Build result \$?\""
   fi
 )
