@@ -248,5 +248,5 @@
 			"revisionTime": "2017-04-10T19:43:55Z"
 		}
 	],
-	"rootPath": "github.com/danielstutzman/sync-logs-from-s3"
+	"rootPath": "github.com/danielstutzman/sync-log-files-to-db"
 }

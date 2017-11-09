@@ -1,4 +1,4 @@
 FROM scratch
-COPY ./sync-logs-from-s3 /root/sync-logs-from-s3
+COPY ./sync-log-files-to-db /root/sync-log-files-to-db
 VOLUME /root/config
-CMD ["/root/sync-logs-from-s3"]
+CMD ["/root/sync-log-files-to-db"]

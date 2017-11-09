@@ -3,8 +3,8 @@
 SSH_KEY=/Users/dan/.ssh/vultr
 REMOTE_HOST=build.danstutzman.com
 REMOTE_GOPATH=/root/gopath
-REMOTE_DIR=$REMOTE_GOPATH/src/github.com/danielstutzman/sync-logs-from-s3
-EXECUTABLE=sync-logs-from-s3
+REMOTE_DIR=$REMOTE_GOPATH/src/github.com/danielstutzman/sync-log-files-to-db
+EXECUTABLE=sync-log-files-to-db
 
 sudo ls # get sudo password at the beginning
 
@@ -58,7 +58,7 @@ sync {
 }
 EOF
 
-./rsync.sh -tspozlgD --rsh="ssh -i $SSH_KEY -o StrictHostKeyChecking=no" -r --delete --force --from0 $PWD/ root@build.danstutzman.com:/root/gopath/src/github.com/danielstutzman/sync-logs-from-s3 --progress
+./rsync.sh -tspozlgD --rsh="ssh -i $SSH_KEY -o StrictHostKeyChecking=no" -r --delete --force --from0 $PWD/ root@build.danstutzman.com:/root/gopath/src/github.com/danielstutzman/sync-log-files-to-db --progress
 
 sudo lsyncd -nodaemon -log Exec -logfile /dev/null lsyncd.conf.lua
 
