@@ -8,5 +8,11 @@
     "GcloudPemPath": "./ProjectName-12345.json",
     "GcloudProjectId": "project-id-here",
     "DatasetName": "dataset-name-here"
+  },
+  "InfluxDb": {
+    "Hostname": "127.0.0.1",
+    "Port": "8086",
+    "DatabaseName": "belugacdn_logs",
+    "MeasurementName": "visits"
   }
 }

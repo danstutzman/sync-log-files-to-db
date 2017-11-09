@@ -6,18 +6,20 @@ import (
 	"log"
 	"os"
 
-	"github.com/danielstutzman/sync-logs-from-s3/src/storage/bigquery"
-	my_s3 "github.com/danielstutzman/sync-logs-from-s3/src/storage/s3"
+	"github.com/danielstutzman/sync-log-files-to-db/src/storage/bigquery"
+	"github.com/danielstutzman/sync-log-files-to-db/src/storage/influxdb"
+	my_s3 "github.com/danielstutzman/sync-log-files-to-db/src/storage/s3"
 )
 
 const NUM_PATHS_PER_PAGE = 1000
 
 type Config struct {
-	Bigquery bigquery.Options
-	S3       my_s3.Options
+	BigQuery *bigquery.Options
+	S3       *my_s3.Options
+	Influxdb *influxdb.Options
 }
 
-func main() {
+func readConfig() (*Config, string) {
 	if len(os.Args) < 1+1 {
 		log.Fatalf("First argument should be config.json")
 	}
@@ -32,22 +34,53 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error from json.Unmarshal: %s", err)
 	}
+	return config, configPath
+}
 
-	bigquery.ValidateOptions(&config.Bigquery)
-	bigqueryConn := bigquery.NewBigqueryConnection(&config.Bigquery, configPath)
+func setupConnections(config *Config, configPath string) (*bigquery.BigqueryConnection,
+	*my_s3.S3Connection, *influxdb.InfluxdbConnection) {
 
-	my_s3.ValidateOptions(&config.S3)
-	s3Connection := my_s3.NewS3Connection(&config.S3, configPath)
+	var bigqueryConn *bigquery.BigqueryConnection
+	if config.BigQuery != nil {
+		bigquery.ValidateOptions(config.BigQuery)
+		bigqueryConn = bigquery.NewBigqueryConnection(config.BigQuery, configPath)
+	}
 
+	my_s3.ValidateOptions(config.S3)
+	s3Connection := my_s3.NewS3Connection(config.S3, configPath)
+
+	influxdb.ValidateOptions(config.Influxdb)
+	influxdbConn := influxdb.NewInfluxdbConnection(config.Influxdb, configPath)
+
+	return bigqueryConn, s3Connection, influxdbConn
+}
+
+func collectVisits(s3Connection *my_s3.S3Connection) ([]map[string]string, []string) {
 	visits := []map[string]string{}
-	pageOfPaths := s3Connection.ListPaths(NUM_PATHS_PER_PAGE)
-	for _, path := range pageOfPaths {
-		visits = append(visits, s3Connection.DownloadVisitsForPath(path)...)
+	s3Paths := s3Connection.ListPaths(NUM_PATHS_PER_PAGE)
+	for _, s3Path := range s3Paths {
+		visits = append(visits, s3Connection.DownloadVisitsForPath(s3Path)...)
 	}
+	return visits, s3Paths
+}
+
+func main() {
+	config, configPath := readConfig()
+
+	bigqueryConn, s3Connection, influxdbConn := setupConnections(
+		config, configPath)
+
+	visits, s3Paths := collectVisits(s3Connection)
+
 	if len(visits) > 0 {
-		bigqueryConn.UploadVisits(visits)
+		if bigqueryConn != nil {
+			bigqueryConn.UploadVisits(visits)
+		}
+		if influxdbConn != nil {
+			influxdbConn.InsertVisits(visits)
+		}
 	}
-	for _, path := range pageOfPaths {
-		s3Connection.DeletePath(path)
+	for _, s3Path := range s3Paths {
+		s3Connection.DeletePath(s3Path)
 	}
 }
