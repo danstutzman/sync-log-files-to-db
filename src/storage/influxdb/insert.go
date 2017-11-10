@@ -12,8 +12,7 @@ func (conn *InfluxdbConnection) InsertMaps(tagsSet map[string]bool,
 
 	// Create a batch
 	points, err := clientPkg.NewBatchPoints(clientPkg.BatchPointsConfig{
-		Database:  conn.databaseName,
-		Precision: "s",
+		Database: conn.databaseName,
 	})
 	if err != nil {
 		log.Fatalf("Error from NewBatchPoints: %s", err)
