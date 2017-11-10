@@ -3,6 +3,7 @@
 /config/Speech-ba6281533dc8.json
 /config/config.json
 /config/s3.creds.ini
+/config/redis_input.txt.prod
 /CreateThumbnail-data.json
 /build
 .*.swp

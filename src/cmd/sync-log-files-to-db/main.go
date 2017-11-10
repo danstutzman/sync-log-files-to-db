@@ -7,12 +7,14 @@ import (
 	"os"
 
 	"github.com/danielstutzman/sync-log-files-to-db/src/sources/docker"
+	"github.com/danielstutzman/sync-log-files-to-db/src/sources/redis"
 	my_s3 "github.com/danielstutzman/sync-log-files-to-db/src/sources/s3"
 )
 
 type Config struct {
-	WatchDockerJsonFiles *docker.Options
-	WatchS3              *my_s3.Options
+	ListenOnFakeRedisForBelugaCDNLogs *redis.Options
+	WatchDockerJsonFiles              *docker.Options
+	WatchS3                           *my_s3.Options
 }
 
 func readConfig() (*Config, string) {
@@ -36,19 +38,26 @@ func readConfig() (*Config, string) {
 func main() {
 	config, configPath := readConfig()
 
-	if config.WatchDockerJsonFiles == nil && config.WatchS3 == nil {
-		log.Fatalf("Config should include one or both of WatchDockerJsonFiles and WatchS3")
+	startedOne := false
+	if config.ListenOnFakeRedisForBelugaCDNLogs != nil {
+		startedOne = true
+		redis.ValidateOptions(config.ListenOnFakeRedisForBelugaCDNLogs)
+		go redis.ListenForever(config.ListenOnFakeRedisForBelugaCDNLogs, configPath)
 	}
-
 	if config.WatchDockerJsonFiles != nil {
+		startedOne = true
 		docker.ValidateOptions(config.WatchDockerJsonFiles)
 		go docker.TailDockerLogsForever(config.WatchDockerJsonFiles, configPath)
 	}
-
 	if config.WatchS3 != nil {
+		startedOne = true
 		my_s3.ValidateOptions(config.WatchS3)
 		go my_s3.PollForever(config.WatchS3, configPath)
 	}
 
-	select {} // block forever while goroutines run
+	if startedOne {
+		select {} // block forever while goroutines run
+	} else {
+		log.Fatalf("No sources specified in config")
+	}
 }

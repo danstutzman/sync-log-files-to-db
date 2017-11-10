@@ -1,0 +1,12 @@
+*2
+$4
+AUTH
+$20
+(password goes here)
+*3
+$5
+LPUSH
+$9
+belugacdn
+$586
+{"time":"1509993390","duration":"0.076","trace":"3aba8680-2f2b-4110-a0ee-844890786f81","server_region":"Weehawken","protocol":"HTTP/1.1","property_name":"","status":"200","response_size":"641","header_size":"586","remote_addr":"2610:1c8:1:0:5926:ecf2:e1:dba2","request_method":"GET","host":"belugacdn.danstutzman.com","uri":"/","user_agent":"Mozilla/5.0 (X11; Linux x86_64; rv:54.0) Gecko/20100101 Firefox/54.0","referer":"-","content_type":"text/html","cache_status":"hit","geo_continent":"North America","geo_continent_code":"NA","geo_country":"United States","geo_country_code":"US"}
