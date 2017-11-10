@@ -22,6 +22,22 @@ type LogLine struct {
 	Message    string
 }
 
+func tailLogLines(out io.Reader) chan *LogLine {
+	c := make(chan *LogLine)
+	go func() {
+		for {
+			logLine := readLogLineBlocking(out)
+			if logLine == nil {
+				close(c)
+				break
+			} else {
+				c <- logLine
+			}
+		}
+	}()
+	return c
+}
+
 func readLogLineBlocking(out io.Reader) *LogLine {
 
 	// Read 8-byte header (blocking)

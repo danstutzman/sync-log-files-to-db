@@ -1,6 +1,7 @@
 package influxdb
 
 import (
+	"fmt"
 	"log"
 	"regexp"
 	"strconv"
@@ -31,6 +32,15 @@ func NewInfluxdbConnection(opts *Options, configPath string) *InfluxdbConnection
 		client:          client,
 		databaseName:    opts.DatabaseName,
 		measurementName: opts.MeasurementName,
+	}
+}
+
+func (conn *InfluxdbConnection) CreateDatabase() {
+	log.Printf("Creating InfluxDB database %s...", conn.databaseName)
+	command := fmt.Sprintf("CREATE DATABASE %s", conn.databaseName)
+	_, err := conn.query(command)
+	if err != nil {
+		log.Fatalf("Error from %s: %s", command, err)
 	}
 }
 

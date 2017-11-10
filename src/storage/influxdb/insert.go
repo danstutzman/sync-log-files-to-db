@@ -1,20 +1,46 @@
 package influxdb
 
 import (
-	"fmt"
 	"log"
 	"time"
 
 	clientPkg "github.com/influxdata/influxdb/client/v2"
 )
 
-func (conn *InfluxdbConnection) InsertVisits(visits []map[string]string) {
-	log.Printf("Creating InfluxDB database %s...", conn.databaseName)
-	command := fmt.Sprintf("CREATE DATABASE %s", conn.databaseName)
-	_, err := conn.query(command)
+func (conn *InfluxdbConnection) InsertMaps(maps []map[string]interface{}) {
+	// Create a batch
+	points, err := clientPkg.NewBatchPoints(clientPkg.BatchPointsConfig{
+		Database:  conn.databaseName,
+		Precision: "s",
+	})
 	if err != nil {
-		log.Fatalf("Error from %s: %s", command, err)
+		log.Fatalf("Error from NewBatchPoints: %s", err)
 	}
+
+	for _, mapWithTimestamp := range maps {
+		mapWithoutTimestamp := map[string]interface{}{}
+		for key, value := range mapWithTimestamp {
+			if key != "timestamp" {
+				mapWithoutTimestamp[key] = value
+			}
+		}
+
+		tags := map[string]string{}
+		point, err := clientPkg.NewPoint(conn.measurementName, tags,
+			mapWithoutTimestamp, mapWithTimestamp["timestamp"].(time.Time))
+		if err != nil {
+			log.Fatalf("Error from NewPoint: %s", err)
+		}
+		points.AddPoint(point)
+	}
+
+	log.Printf("Inserting %d InfluxDB points...", len(points.Points()))
+	if err := conn.client.Write(points); err != nil {
+		log.Fatalf("Error from Write: %s", err)
+	}
+}
+
+func (conn *InfluxdbConnection) InsertVisits(visits []map[string]string) {
 
 	// Create a batch
 	points, err := clientPkg.NewBatchPoints(clientPkg.BatchPointsConfig{
