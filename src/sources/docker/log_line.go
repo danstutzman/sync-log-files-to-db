@@ -31,7 +31,12 @@ func tailLogLines(out io.Reader, containerId, imageName string, logLinesChan cha
 	reader := bufio.NewReader(out)
 	possibleHeader, err := reader.Peek(8)
 	if err != nil {
-		log.Fatalf("Error from Peek: %s", err)
+		if err == io.EOF {
+			log.Printf("EOF from logs of %s", containerId)
+			return
+		} else {
+			log.Fatalf("Error from Peek: %s", err)
+		}
 	}
 	if possibleHeader[0] > 2 ||
 		possibleHeader[1] != 0 ||
