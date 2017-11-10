@@ -3,6 +3,8 @@
 ssh -i ~/.ssh/vultr root@build.danstutzman.com <<"EOF"
 set -ex
 
+mkdir -p /etc/docker
+echo '{"storage-driver":"overlay2"}' > /etc/docker/daemon.json
 apt-get install -y docker.io influxdb-client
 
 # Generate /root/influxdb.conf
