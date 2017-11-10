@@ -25,11 +25,13 @@ type LogLine struct {
 	Message     string
 }
 
-func tailLogLines(out io.Reader, containerId, imageName string, logLinesChan chan<- LogLine) {
+func tailLogLines(out io.Reader, containerId, imageName string,
+	noTimeoutChan chan<- bool, logLinesChan chan<- LogLine) {
 	log.Printf("Tail for container %s image %s", containerId, imageName)
 
 	reader := bufio.NewReader(out)
 	possibleHeader, err := reader.Peek(8)
+	noTimeoutChan <- true
 	if err != nil {
 		if err == io.EOF {
 			log.Printf("EOF from logs of %s", containerId)
@@ -38,6 +40,7 @@ func tailLogLines(out io.Reader, containerId, imageName string, logLinesChan cha
 			log.Fatalf("Error from Peek: %s", err)
 		}
 	}
+
 	if possibleHeader[0] > 2 ||
 		possibleHeader[1] != 0 ||
 		possibleHeader[2] != 0 ||

@@ -17,6 +17,7 @@ var INFLUXDB_TAGS_SET = map[string]bool{
 	"container_id": true,
 	"image_name":   true,
 }
+var LOGS_TIMEOUT = time.Duration(1 * time.Second)
 
 func tailContainer(container *types.Container,
 	influxdbConn *influxdb.InfluxdbConnection, client *client.Client,
@@ -43,7 +44,15 @@ func tailContainer(container *types.Container,
 		panic(err)
 	}
 
-	go tailLogLines(reader, container.ID, container.Image, logLinesChan)
+	noTimeoutChan := make(chan bool, 1)
+	go tailLogLines(reader, container.ID, container.Image, noTimeoutChan, logLinesChan)
+	select {
+	case <-noTimeoutChan:
+		// Great, successful read without timeout
+	case <-time.After(LOGS_TIMEOUT):
+		log.Fatalf("Timeout after %s trying to read logs from container %s (image=%s)",
+			LOGS_TIMEOUT, container.ID, container.Image)
+	}
 }
 
 func pollForNewContainersForever(client *client.Client,
