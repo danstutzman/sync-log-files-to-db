@@ -13,13 +13,16 @@ import (
 const MAX_INFLUXDB_INSERT_BATCH_SIZE = 100
 
 var TAIL_LOG_LINE_FLUSH_TIMEOUT = time.Millisecond * 100
-var INFLUXDB_TAGS_SET = map[string]bool{"image_name": true}
+var INFLUXDB_TAGS_SET = map[string]bool{
+	"container_id": true,
+	"image_name":   true,
+}
 
 func tailContainer(container *types.Container,
 	influxdbConn *influxdb.InfluxdbConnection, client *client.Client,
 	logLinesChan chan<- LogLine) {
 
-	lastTimestamp := influxdbConn.QueryForLastTimestamp(container.Image)
+	lastTimestamp := influxdbConn.QueryForLastTimestamp(container.ID)
 	justAfterLastTimestamp := lastTimestamp.Add(time.Nanosecond)
 
 	log.Printf("Tailing logs for container %s (image=%s) after %s...",
@@ -40,7 +43,7 @@ func tailContainer(container *types.Container,
 		panic(err)
 	}
 
-	go tailLogLines(reader, container.Image, logLinesChan)
+	go tailLogLines(reader, container.ID, container.Image, logLinesChan)
 }
 
 func pollForNewContainersForever(client *client.Client,
@@ -50,7 +53,7 @@ func pollForNewContainersForever(client *client.Client,
 	seenContainerIds := map[string]bool{}
 	for {
 		containers, err := client.ContainerList(
-			context.Background(), types.ContainerListOptions{})
+			context.Background(), types.ContainerListOptions{All: true})
 		if err != nil {
 			log.Fatalf("Error from ContainerList: %s", err)
 		}
@@ -111,9 +114,10 @@ func TailDockerLogsForever(config *Options, configPath string) {
 
 func appendLogLineToMaps(logLine LogLine, maps []map[string]interface{}) []map[string]interface{} {
 	logLineAsMap := map[string]interface{}{
-		"timestamp":  logLine.Timestamp,
-		"image_name": logLine.ImageName,
-		"message":    logLine.Message,
+		"timestamp":    logLine.Timestamp,
+		"container_id": logLine.ContainerId,
+		"image_name":   logLine.ImageName,
+		"message":      logLine.Message,
 	}
 	return append(maps, logLineAsMap)
 }

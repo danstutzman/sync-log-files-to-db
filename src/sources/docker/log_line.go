@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"bufio"
 	"encoding/binary"
 	"io"
 	"log"
@@ -17,20 +18,63 @@ var DOCKER_LOG_LINE_REGEXP = regexp.MustCompile(
 		"  (.*)\n$")
 
 type LogLine struct {
-	ImageName  string
-	StreamType string
-	Timestamp  time.Time
-	Message    string
+	ContainerId string
+	ImageName   string
+	StreamType  string
+	Timestamp   time.Time
+	Message     string
 }
 
-func tailLogLines(out io.Reader, imageName string, logLinesChan chan<- LogLine) {
-	for {
-		logLine := readLogLineBlocking(out)
-		if logLine == nil {
-			break
-		} else {
-			logLine.ImageName = imageName
-			logLinesChan <- *logLine
+func tailLogLines(out io.Reader, containerId, imageName string, logLinesChan chan<- LogLine) {
+	log.Printf("Tail for container %s image %s", containerId, imageName)
+
+	reader := bufio.NewReader(out)
+	possibleHeader, err := reader.Peek(8)
+	if err != nil {
+		log.Fatalf("Error from Peek: %s", err)
+	}
+	if possibleHeader[0] > 2 ||
+		possibleHeader[1] != 0 ||
+		possibleHeader[2] != 0 ||
+		possibleHeader[3] != 0 {
+
+		for {
+			// not using headers
+			line, err := reader.ReadBytes('\n')
+			if err != nil {
+				if err == io.EOF {
+					return
+				}
+				log.Fatalf("Error from ReadBytes: %s", err)
+			}
+
+			// Parse timestamp in line
+			match := DOCKER_LOG_LINE_REGEXP.FindSubmatch(line)
+			timestamp, err := time.Parse(DOCKER_LOG_TIME_FORMAT, string(match[1]))
+			message := string(match[2])
+			if err != nil {
+				log.Fatalf("Can't parse timestamp %s", string(match[1]))
+			}
+
+			logLine := LogLine{
+				ContainerId: containerId,
+				ImageName:   imageName,
+				Message:     message,
+				Timestamp:   timestamp,
+			}
+			logLinesChan <- logLine
+		}
+	} else {
+		// using headers
+		for {
+			logLine := readLogLineBlocking(reader)
+			if logLine == nil {
+				break
+			} else {
+				logLine.ContainerId = containerId
+				logLine.ImageName = imageName
+				logLinesChan <- *logLine
+			}
 		}
 	}
 }
@@ -47,7 +91,7 @@ func readLogLineBlocking(out io.Reader) *LogLine {
 		log.Fatalf("Expected 8 but got %d", numBytes)
 	}
 	if err != nil {
-		panic(err)
+		log.Fatalf("Error from Read: %s", err)
 	}
 
 	// Parse files out of header
@@ -61,7 +105,7 @@ func readLogLineBlocking(out io.Reader) *LogLine {
 		log.Fatalf("Expected %d but got %d", lineLen, numBytes)
 	}
 	if err != nil {
-		panic(err)
+		log.Fatalf("Error from Read: %s", err)
 	}
 
 	// Parse timestamp in line
