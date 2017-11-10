@@ -7,18 +7,12 @@ import (
 	"os"
 
 	"github.com/danielstutzman/sync-log-files-to-db/src/sources/docker"
-	"github.com/danielstutzman/sync-log-files-to-db/src/storage/bigquery"
-	"github.com/danielstutzman/sync-log-files-to-db/src/storage/influxdb"
-	my_s3 "github.com/danielstutzman/sync-log-files-to-db/src/storage/s3"
+	my_s3 "github.com/danielstutzman/sync-log-files-to-db/src/sources/s3"
 )
-
-const NUM_PATHS_PER_PAGE = 1000
 
 type Config struct {
 	WatchDockerJsonFiles *docker.Options
-	BigQuery             *bigquery.Options
-	S3                   *my_s3.Options
-	Influxdb             *influxdb.Options
+	WatchS3              *my_s3.Options
 }
 
 func readConfig() (*Config, string) {
@@ -39,55 +33,22 @@ func readConfig() (*Config, string) {
 	return config, configPath
 }
 
-func setupConnections(config *Config, configPath string) (*bigquery.BigqueryConnection,
-	*my_s3.S3Connection, *influxdb.InfluxdbConnection) {
-
-	var bigqueryConn *bigquery.BigqueryConnection
-	if config.BigQuery != nil {
-		bigquery.ValidateOptions(config.BigQuery)
-		bigqueryConn = bigquery.NewBigqueryConnection(config.BigQuery, configPath)
-	}
-
-	my_s3.ValidateOptions(config.S3)
-	s3Connection := my_s3.NewS3Connection(config.S3, configPath)
-
-	influxdb.ValidateOptions(config.Influxdb)
-	influxdbConn := influxdb.NewInfluxdbConnection(config.Influxdb, configPath)
-
-	return bigqueryConn, s3Connection, influxdbConn
-}
-
-func collectVisits(s3Connection *my_s3.S3Connection) ([]map[string]string, []string) {
-	visits := []map[string]string{}
-	s3Paths := s3Connection.ListPaths(NUM_PATHS_PER_PAGE)
-	for _, s3Path := range s3Paths {
-		visits = append(visits, s3Connection.DownloadVisitsForPath(s3Path)...)
-	}
-	return visits, s3Paths
-}
-
 func main() {
 	config, configPath := readConfig()
 
-	// if config.WatchDockerJsonFiles != nil {
-	// docker.Main()
-	// }
-	// log.Fatalf("Exit early")
-
-	bigqueryConn, s3Connection, influxdbConn := setupConnections(
-		config, configPath)
-
-	visits, s3Paths := collectVisits(s3Connection)
-
-	if len(visits) > 0 {
-		if bigqueryConn != nil {
-			bigqueryConn.UploadVisits(visits)
-		}
-		if influxdbConn != nil {
-			influxdbConn.InsertVisits(visits)
-		}
+	if config.WatchDockerJsonFiles == nil && config.WatchS3 == nil {
+		log.Fatalf("Config should include one or both of WatchDockerJsonFiles and WatchS3")
 	}
-	for _, s3Path := range s3Paths {
-		s3Connection.DeletePath(s3Path)
+
+	if config.WatchDockerJsonFiles != nil {
+		docker.ValidateOptions(config.WatchDockerJsonFiles)
+		go docker.TailDockerLogsForever(config.WatchDockerJsonFiles, configPath)
 	}
+
+	if config.WatchS3 != nil {
+		my_s3.ValidateOptions(config.WatchS3)
+		go my_s3.PollForever(config.WatchS3, configPath)
+	}
+
+	select {} // block forever while goroutines run
 }

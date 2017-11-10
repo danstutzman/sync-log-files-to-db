@@ -5,6 +5,9 @@ import (
 	"io"
 	"log"
 	"path"
+	"time"
+
+	"github.com/danielstutzman/sync-log-files-to-db/src/storage/influxdb"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -12,11 +15,52 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/cenkalti/backoff"
+	"github.com/danielstutzman/sync-log-files-to-db/src/storage/bigquery"
 )
+
+const NUM_PATHS_PER_PAGE = 1000
 
 type S3Connection struct {
 	service    *s3.S3
 	bucketName string
+}
+
+func PollForever(opts *Options, configPath string) {
+	s3Conn := NewS3Connection(opts, configPath)
+
+	var bigqueryConn *bigquery.BigqueryConnection
+	if opts.BigQuery != nil {
+		bigqueryConn = bigquery.NewBigqueryConnection(opts.BigQuery, configPath)
+	}
+
+	var influxdbConn *influxdb.InfluxdbConnection
+	if opts.InfluxDb != nil {
+		influxdbConn = influxdb.NewInfluxdbConnection(opts.InfluxDb, configPath)
+		influxdbConn.CreateDatabase()
+	}
+
+	for {
+		visits := []map[string]string{}
+		s3Paths := s3Conn.ListPaths(NUM_PATHS_PER_PAGE)
+		for _, s3Path := range s3Paths {
+			visits = append(visits, s3Conn.DownloadVisitsForPath(s3Path)...)
+		}
+
+		if len(visits) > 0 {
+			if bigqueryConn != nil {
+				bigqueryConn.UploadVisits(visits)
+			}
+			if influxdbConn != nil {
+				influxdbConn.InsertVisits(visits)
+			}
+		}
+		for _, s3Path := range s3Paths {
+			s3Conn.DeletePath(s3Path)
+		}
+
+		log.Printf("Sleeping 5 minutes while waiting for next batch of logs")
+		time.Sleep(5 * time.Minute)
+	}
 }
 
 func NewS3Connection(opts *Options, configPath string) *S3Connection {

@@ -1,18 +1,27 @@
 {
-  "S3": {
+  "WatchDockerJsonFiles": {
+    "InfluxDb": {
+      "Hostname": "127.0.0.1",
+      "Port": "8086",
+      "DatabaseName": "docker_logs",
+      "MeasurementName": "logs"
+    }
+  },
+  "WatchS3": {
     "CredsPath": "./s3.creds.ini",
     "Region": "us-east-1",
-    "BucketName": "belugacdn-logs-danstutzman"
-  },
-  "BigQuery": {
-    "GcloudPemPath": "./ProjectName-12345.json",
-    "GcloudProjectId": "project-id-here",
-    "DatasetName": "dataset-name-here"
-  },
-  "InfluxDb": {
-    "Hostname": "127.0.0.1",
-    "Port": "8086",
-    "DatabaseName": "belugacdn_logs",
-    "MeasurementName": "visits"
+    "BucketName": "belugacdn-logs-danstutzman",
+
+    "BigQuery": {
+      "GcloudPemPath": "./Project-abc123.json",
+      "GcloudProjectId": "ProjectIdHere",
+      "DatasetName": "belugacdn_logs"
+    },
+    "InfluxDb": {
+      "Hostname": "127.0.0.1",
+      "Port": "8086",
+      "DatabaseName": "belugacdn_logs",
+      "MeasurementName": "visits"
+    }
   }
 }

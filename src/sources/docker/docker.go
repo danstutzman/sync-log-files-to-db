@@ -15,11 +15,11 @@ const MAX_INFLUXDB_INSERT_BATCH_SIZE = 100
 var TAIL_LOG_LINE_FLUSH_TIMEOUT = time.Millisecond * 100
 var INFLUXDB_TAGS_SET = map[string]bool{"image_name": true}
 
-func TailDockerLogs(config *Options, configPath string) {
+func TailDockerLogsForever(config *Options, configPath string) {
 	var influxdbConn *influxdb.InfluxdbConnection
-	if config.Influxdb != nil {
-		influxdb.ValidateOptions(config.Influxdb)
-		influxdbConn = influxdb.NewInfluxdbConnection(config.Influxdb, configPath)
+	if config.InfluxDb != nil {
+		influxdb.ValidateOptions(config.InfluxDb)
+		influxdbConn = influxdb.NewInfluxdbConnection(config.InfluxDb, configPath)
 	}
 	influxdbConn.CreateDatabase()
 

@@ -7,12 +7,12 @@ import (
 )
 
 type Options struct {
-	Influxdb *influxdb.Options
+	InfluxDb *influxdb.Options
 }
 
 func ValidateOptions(options *Options) {
-	if options.Influxdb == nil {
-		log.Fatalf("Missing Docker.Influxdb")
+	if options.InfluxDb == nil {
+		log.Fatalf("Missing Docker.InfluxDb")
 	}
-	influxdb.ValidateOptions(options.Influxdb)
+	influxdb.ValidateOptions(options.InfluxDb)
 }
