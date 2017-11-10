@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/danielstutzman/sync-log-files-to-db/src/sources/docker"
 	"github.com/danielstutzman/sync-log-files-to-db/src/storage/bigquery"
 	"github.com/danielstutzman/sync-log-files-to-db/src/storage/influxdb"
 	my_s3 "github.com/danielstutzman/sync-log-files-to-db/src/storage/s3"
@@ -14,9 +15,10 @@ import (
 const NUM_PATHS_PER_PAGE = 1000
 
 type Config struct {
-	BigQuery *bigquery.Options
-	S3       *my_s3.Options
-	Influxdb *influxdb.Options
+	WatchDockerJsonFiles *docker.Options
+	BigQuery             *bigquery.Options
+	S3                   *my_s3.Options
+	Influxdb             *influxdb.Options
 }
 
 func readConfig() (*Config, string) {
@@ -66,6 +68,11 @@ func collectVisits(s3Connection *my_s3.S3Connection) ([]map[string]string, []str
 
 func main() {
 	config, configPath := readConfig()
+
+	// if config.WatchDockerJsonFiles != nil {
+	// docker.Main()
+	// }
+	// log.Fatalf("Exit early")
 
 	bigqueryConn, s3Connection, influxdbConn := setupConnections(
 		config, configPath)
