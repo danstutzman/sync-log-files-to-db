@@ -58,8 +58,8 @@ func PollForever(opts *Options, configPath string) {
 			s3Conn.DeletePath(s3Path)
 		}
 
-		log.Printf("Sleeping 5 minutes while waiting for next S3 batch...")
-		time.Sleep(5 * time.Minute)
+		log.Printf("Wait %ds for next S3 batch...", opts.SecondsBetweenPolls)
+		time.Sleep(time.Duration(opts.SecondsBetweenPolls) * time.Second)
 	}
 }
 
