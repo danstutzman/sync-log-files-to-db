@@ -39,7 +39,6 @@ func (conn *InfluxdbConnection) InsertMaps(tagsSet map[string]bool,
 		points.AddPoint(point)
 	}
 
-	log.Printf("Inserting %d InfluxDB points...", len(points.Points()))
 	if err := conn.client.Write(points); err != nil {
 		log.Fatalf("Error from Write: %s", err)
 	}
@@ -91,7 +90,6 @@ func (conn *InfluxdbConnection) InsertVisits(visits []map[string]string) {
 		points.AddPoint(point)
 	}
 
-	log.Printf("Inserting %d InfluxDB points...", len(points.Points()))
 	if err := conn.client.Write(points); err != nil {
 		log.Fatalf("Error from Write: %s", err)
 	}

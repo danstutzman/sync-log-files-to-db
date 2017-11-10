@@ -83,8 +83,7 @@ func syncToInfluxdbForever(logLinesChan <-chan LogLine,
 			case logLine := <-logLinesChan:
 				maps = appendLogLineToMaps(logLine, maps)
 			case <-time.After(TAIL_LOG_LINE_FLUSH_TIMEOUT):
-				log.Printf("No new logs after %v timeout, so inserting",
-					TAIL_LOG_LINE_FLUSH_TIMEOUT)
+				// No new logs after timeout, so inserting
 				influxdbConn.InsertMaps(INFLUXDB_TAGS_SET, maps)
 				maps = []map[string]interface{}{}
 			}
