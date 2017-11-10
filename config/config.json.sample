@@ -1,5 +1,6 @@
 {
   "WatchDockerJsonFiles": {
+    "SecondsBetweenPollForNewContainers": 10,
     "InfluxDb": {
       "Hostname": "127.0.0.1",
       "Port": "8086",

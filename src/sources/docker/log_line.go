@@ -23,7 +23,7 @@ type LogLine struct {
 	Message    string
 }
 
-func tailLogLines(out io.Reader, imageName string, logLinesChan chan LogLine) {
+func tailLogLines(out io.Reader, imageName string, logLinesChan chan<- LogLine) {
 	for {
 		logLine := readLogLineBlocking(out)
 		if logLine == nil {
@@ -36,7 +36,6 @@ func tailLogLines(out io.Reader, imageName string, logLinesChan chan LogLine) {
 }
 
 func readLogLineBlocking(out io.Reader) *LogLine {
-
 	// Read 8-byte header (blocking)
 	// See https://docs.docker.com/engine/api/v1.24/ for header format
 	header := make([]byte, 8)
