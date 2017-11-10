@@ -17,25 +17,22 @@ var DOCKER_LOG_LINE_REGEXP = regexp.MustCompile(
 		"  (.*)\n$")
 
 type LogLine struct {
+	ImageName  string
 	StreamType string
 	Timestamp  time.Time
 	Message    string
 }
 
-func tailLogLines(out io.Reader) chan *LogLine {
-	c := make(chan *LogLine)
-	go func() {
-		for {
-			logLine := readLogLineBlocking(out)
-			if logLine == nil {
-				close(c)
-				break
-			} else {
-				c <- logLine
-			}
+func tailLogLines(out io.Reader, imageName string, logLinesChan chan LogLine) {
+	for {
+		logLine := readLogLineBlocking(out)
+		if logLine == nil {
+			break
+		} else {
+			logLine.ImageName = imageName
+			logLinesChan <- *logLine
 		}
-	}()
-	return c
+	}
 }
 
 func readLogLineBlocking(out io.Reader) *LogLine {

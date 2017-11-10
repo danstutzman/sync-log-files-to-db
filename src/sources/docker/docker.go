@@ -13,6 +13,7 @@ import (
 const MAX_INFLUXDB_INSERT_BATCH_SIZE = 100
 
 var TAIL_LOG_LINE_FLUSH_TIMEOUT = time.Millisecond * 100
+var INFLUXDB_TAGS_SET = map[string]bool{"image_name": true}
 
 func TailDockerLogs(config *Options, configPath string) {
 	var influxdbConn *influxdb.InfluxdbConnection
@@ -33,6 +34,7 @@ func TailDockerLogs(config *Options, configPath string) {
 		log.Fatalf("Error from ContainerList: %s", err)
 	}
 
+	logLinesChan := make(chan LogLine)
 	for _, container := range containers {
 		log.Printf("Tailing logs for container %s (image=%s)...",
 			container.ID[:10], container.Image)
@@ -53,34 +55,36 @@ func TailDockerLogs(config *Options, configPath string) {
 			panic(err)
 		}
 
-		logLinesChan := tailLogLines(out)
+		go tailLogLines(out, container.Image, logLinesChan)
+	}
 
-		maps := []map[string]interface{}{}
-		for {
-			if len(maps) == 0 {
-				logLine := <-logLinesChan
-				logLineAsMap := map[string]interface{}{
-					"timestamp": logLine.Timestamp,
-					"message":   logLine.Message,
-				}
-				maps = append(maps, logLineAsMap)
-			} else if len(maps) >= MAX_INFLUXDB_INSERT_BATCH_SIZE {
-				influxdbConn.InsertMaps(maps)
+	maps := []map[string]interface{}{}
+	for {
+		if len(maps) == 0 {
+			logLine := <-logLinesChan
+			maps = appendLogLineToMaps(logLine, maps)
+		} else if len(maps) >= MAX_INFLUXDB_INSERT_BATCH_SIZE {
+			influxdbConn.InsertMaps(INFLUXDB_TAGS_SET, maps)
+			maps = []map[string]interface{}{}
+		} else {
+			select {
+			case logLine := <-logLinesChan:
+				maps = appendLogLineToMaps(logLine, maps)
+			case <-time.After(TAIL_LOG_LINE_FLUSH_TIMEOUT):
+				log.Printf("No new logs after %v timeout, so inserting",
+					TAIL_LOG_LINE_FLUSH_TIMEOUT)
+				influxdbConn.InsertMaps(INFLUXDB_TAGS_SET, maps)
 				maps = []map[string]interface{}{}
-			} else {
-				select {
-				case logLine := <-logLinesChan:
-					logLineAsMap := map[string]interface{}{
-						"timestamp": logLine.Timestamp,
-						"message":   logLine.Message,
-					}
-					maps = append(maps, logLineAsMap)
-				case <-time.After(TAIL_LOG_LINE_FLUSH_TIMEOUT):
-					log.Println("No new logs after timeout, so inserting")
-					influxdbConn.InsertMaps(maps)
-					maps = []map[string]interface{}{}
-				}
 			}
 		}
 	}
+}
+
+func appendLogLineToMaps(logLine LogLine, maps []map[string]interface{}) []map[string]interface{} {
+	logLineAsMap := map[string]interface{}{
+		"timestamp":  logLine.Timestamp,
+		"image_name": logLine.ImageName,
+		"message":    logLine.Message,
+	}
+	return append(maps, logLineAsMap)
 }
