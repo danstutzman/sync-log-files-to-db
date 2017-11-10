@@ -14,4 +14,5 @@ func ValidateOptions(options *Options) {
 	if options.Influxdb == nil {
 		log.Fatalf("Missing Docker.Influxdb")
 	}
+	influxdb.ValidateOptions(options.Influxdb)
 }
