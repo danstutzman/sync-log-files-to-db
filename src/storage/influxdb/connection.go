@@ -44,21 +44,6 @@ func (conn *InfluxdbConnection) CreateDatabase() {
 	}
 }
 
-func (conn *InfluxdbConnection) query(command string) (result []clientPkg.Result, err error) {
-
-	q := clientPkg.Query{
-		Command:  command,
-		Database: conn.databaseName,
-	}
-	if response, err := conn.client.Query(q); err == nil {
-		if response.Error() != nil {
-			return []clientPkg.Result{}, response.Error()
-		}
-		return response.Results, nil
-	}
-	return []clientPkg.Result{}, nil
-}
-
 func toInt(key, value string) int64 {
 	if !INTEGER_REGEXP.MatchString(value) {
 		log.Fatalf("Unexpected characters in field %s: '%s'", key, value)

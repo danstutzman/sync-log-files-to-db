@@ -36,20 +36,22 @@ func TailDockerLogs(config *Options, configPath string) {
 
 	logLinesChan := make(chan LogLine)
 	for _, container := range containers {
-		log.Printf("Tailing logs for container %s (image=%s)...",
-			container.ID[:10], container.Image)
+		lastTimestamp := influxdbConn.QueryForLastTimestamp(container.Image)
+		justAfterLastTimestamp := lastTimestamp.Add(time.Nanosecond)
+
+		log.Printf("Tailing logs for container %s (image=%s) after %s...",
+			container.ID[:10], container.Image, lastTimestamp)
 
 		out, err := client.ContainerLogs(
 			context.Background(),
 			container.ID,
 			types.ContainerLogsOptions{
+				Details:    true,
+				Follow:     true,
 				ShowStdout: true,
 				ShowStderr: true,
-				// Since      string
+				Since:      justAfterLastTimestamp.Format(time.RFC3339Nano),
 				Timestamps: true,
-				Follow:     true,
-				// Tail:       string, // num lines from end to show?
-				Details: true,
 			})
 		if err != nil {
 			panic(err)
