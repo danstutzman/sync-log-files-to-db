@@ -195,12 +195,3 @@ func ListenForever(config *Options, configPath string) {
 
 	startRedisListener(config, influxdbConn)
 }
-
-// func appendLogLineToMaps(logLine LogLine, maps []map[string]interface{}) []map[string]interface{} {
-// 	logLineAsMap := map[string]interface{}{
-// 		"timestamp":  logLine.Timestamp,
-// 		"image_name": logLine.ImageName,
-// 		"message":    logLine.Message,
-// 	}
-// 	return append(maps, logLineAsMap)
-// }
