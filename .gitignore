@@ -2,6 +2,7 @@
 /lsyncd.conf.lua
 /config/Speech-ba6281533dc8.json
 /config/config.json
+/config/config.json.prod
 /config/s3.creds.ini
 /config/redis_input.txt.prod
 /CreateThumbnail-data.json

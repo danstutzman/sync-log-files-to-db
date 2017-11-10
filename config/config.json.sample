@@ -4,6 +4,8 @@
     "InfluxDb": {
       "Hostname": "127.0.0.1",
       "Port": "8086",
+      "Username": "",
+      "Password": "",
       "DatabaseName": "docker_logs",
       "MeasurementName": "logs"
     }
@@ -23,6 +25,8 @@
     "InfluxDb": {
       "Hostname": "127.0.0.1",
       "Port": "8086",
+      "Username": "",
+      "Password": "",
       "DatabaseName": "belugacdn_logs",
       "MeasurementName": "visits"
     }
