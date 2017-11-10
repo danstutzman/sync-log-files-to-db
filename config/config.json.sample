@@ -12,6 +12,7 @@
     "Region": "us-east-1",
     "BucketName": "belugacdn-logs-danstutzman",
     "SecondsBetweenPolls": 60,
+    "PathsPerBatch": 100,
 
     "BigQuery": {
       "GcloudPemPath": "./Project-abc123.json",

@@ -18,8 +18,6 @@ import (
 	"github.com/danielstutzman/sync-log-files-to-db/src/storage/bigquery"
 )
 
-const NUM_PATHS_PER_PAGE = 1000
-
 type S3Connection struct {
 	service    *s3.S3
 	bucketName string
@@ -41,7 +39,7 @@ func PollForever(opts *Options, configPath string) {
 
 	for {
 		visits := []map[string]string{}
-		s3Paths := s3Conn.ListPaths(NUM_PATHS_PER_PAGE)
+		s3Paths := s3Conn.ListPaths(int64(opts.PathsPerBatch))
 		for _, s3Path := range s3Paths {
 			visits = append(visits, s3Conn.DownloadVisitsForPath(s3Path)...)
 		}
