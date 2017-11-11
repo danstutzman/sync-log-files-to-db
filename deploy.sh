@@ -42,6 +42,7 @@ lsof -i :6380 || docker run -d \
   -v /etc/ssl/certs:/etc/ssl/certs:ro \
   -v /root/gopath/src/github.com/danielstutzman/sync-log-files-to-db/config:/root/config:ro \
   -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /var/lib/docker:/var/lib/docker:ro \
   --restart unless-stopped \
   sync-log-files-to-db /root/sync-log-files-to-db /root/config/config.json.prod
 

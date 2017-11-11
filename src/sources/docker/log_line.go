@@ -3,6 +3,7 @@ package docker
 import (
 	"bufio"
 	"encoding/binary"
+	"encoding/json"
 	"io"
 	"log"
 	"regexp"
@@ -25,9 +26,48 @@ type LogLine struct {
 	Message     string
 }
 
+type JsonFileLog struct {
+	Log    string `json:"log"`
+	Stream string `json:"stream"`
+	Time   string `json:"time"`
+}
+
+func tailLogLinesForJsonFile(out io.Reader, containerId, imageName string,
+	logLinesChan chan<- LogLine) {
+
+	log.Printf("Tail for container %s image %s (json file)", containerId, imageName)
+
+	scanner := bufio.NewScanner(out)
+	for scanner.Scan() {
+		if scanner.Err() != nil {
+			log.Fatalf("Error from scanner.Err: %s", scanner.Err())
+		}
+		jsonFileLogJson := scanner.Bytes()
+
+		jsonFileLog := JsonFileLog{}
+		err := json.Unmarshal(jsonFileLogJson, &jsonFileLog)
+		if err != nil {
+			log.Fatalf("Error from json.Unmarshal: %s", err)
+		}
+
+		timestamp, err := time.Parse(DOCKER_LOG_TIME_FORMAT, jsonFileLog.Time)
+		if err != nil {
+			log.Fatalf("Can't parse timestamp %s", jsonFileLog.Time)
+		}
+
+		logLinesChan <- LogLine{
+			StreamType:  jsonFileLog.Stream,
+			Timestamp:   timestamp,
+			Message:     jsonFileLog.Log,
+			ContainerId: containerId,
+			ImageName:   imageName,
+		}
+	}
+}
+
 func tailLogLines(out io.Reader, containerId, imageName string,
 	noTimeoutChan chan<- bool, logLinesChan chan<- LogLine) {
-	log.Printf("Tail for container %s image %s", containerId, imageName)
+	log.Printf("Tail for container %s image %s (Docker API)", containerId, imageName)
 
 	reader := bufio.NewReader(out)
 	possibleHeader, err := reader.Peek(8)

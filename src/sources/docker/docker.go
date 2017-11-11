@@ -2,7 +2,9 @@ package docker
 
 import (
 	"context"
+	"io"
 	"log"
+	"os"
 	"time"
 
 	"github.com/danielstutzman/sync-log-files-to-db/src/storage/influxdb"
@@ -29,29 +31,45 @@ func tailContainer(container *types.Container,
 	log.Printf("Tailing logs for container %s (image=%s) after %s...",
 		container.ID[:10], container.Image, lastTimestamp)
 
-	reader, err := client.ContainerLogs(
-		context.Background(),
-		container.ID,
-		types.ContainerLogsOptions{
-			Details:    true,
-			Follow:     true,
-			ShowStdout: true,
-			ShowStderr: true,
-			Since:      justAfterLastTimestamp.Format(time.RFC3339Nano),
-			Timestamps: true,
-		})
+	inspect, err := client.ContainerInspect(context.TODO(), container.ID)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Error from ContainerInspect for %s: %s", container.ID, err)
 	}
 
-	noTimeoutChan := make(chan bool, 1)
-	go tailLogLines(reader, container.ID, container.Image, noTimeoutChan, logLinesChan)
-	select {
-	case <-noTimeoutChan:
-		// Great, successful read without timeout
-	case <-time.After(LOGS_TIMEOUT):
-		log.Fatalf("Timeout after %s trying to read logs from container %s (image=%s)",
-			LOGS_TIMEOUT, container.ID, container.Image)
+	var reader io.Reader
+	log.Printf("Attempting to open log at %s", inspect.LogPath)
+	reader, err = os.Open(inspect.LogPath)
+	if err == nil {
+		tailLogLinesForJsonFile(reader, container.ID, container.Image, logLinesChan)
+	} else if os.IsNotExist(err) {
+		log.Printf("Open failed with error %s", err)
+		// reassign reader
+		reader, err = client.ContainerLogs(
+			context.TODO(),
+			container.ID,
+			types.ContainerLogsOptions{
+				Details:    true,
+				Follow:     true,
+				ShowStdout: true,
+				ShowStderr: true,
+				Since:      justAfterLastTimestamp.Format(time.RFC3339Nano),
+				Timestamps: true,
+			})
+		if err != nil {
+			log.Fatalf("Error from ContainerLogsOptions: %s", err)
+		}
+
+		noTimeoutChan := make(chan bool, 1)
+		go tailLogLines(reader, container.ID, container.Image, noTimeoutChan, logLinesChan)
+		select {
+		case <-noTimeoutChan:
+			// Great, successful read without timeout
+		case <-time.After(LOGS_TIMEOUT):
+			log.Fatalf("Timeout after %s trying to read logs from container %s (image=%s)",
+				LOGS_TIMEOUT, container.ID, container.Image)
+		}
+	} else {
+		log.Fatalf("Error from Open: %s", err)
 	}
 }
 
@@ -62,7 +80,7 @@ func pollForNewContainersForever(client *client.Client,
 	seenContainerIds := map[string]bool{}
 	for {
 		containers, err := client.ContainerList(
-			context.Background(), types.ContainerListOptions{All: true})
+			context.TODO(), types.ContainerListOptions{All: true})
 		if err != nil {
 			log.Fatalf("Error from ContainerList: %s", err)
 		}
