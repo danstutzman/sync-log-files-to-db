@@ -46,11 +46,11 @@ func (conn *InfluxdbConnection) QueryForLastTimestamp(containerId string) time.T
 			if err != nil {
 				log.Fatalf("Can't convert %v to Int64", values[columnNum])
 			}
-			return time.Unix(0, nanos)
+			return time.Unix(0, nanos).UTC()
 		}
 	}
 	log.Fatalf("Couldn't find time column in query result %v", results)
-	return time.Unix(0, 0) // this line is never reached
+	return time.Unix(0, 0).UTC() // this line is never reached
 }
 
 func (conn *InfluxdbConnection) query(command string) (result []clientPkg.Result, err error) {
