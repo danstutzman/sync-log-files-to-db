@@ -48,7 +48,7 @@ sync {
   host = "root@$REMOTE_HOST",
   targetdir = "$REMOTE_DIR",
   delay = 1,
-  exclude = { '.*.swp', '.*.swx', '*~' },
+  exclude = { '.*.swp', '.*.swx', '*~', '*.sh', '.git' },
   rsync = {
     binary = "$PWD/rsync.sh",
     archive  = false,
