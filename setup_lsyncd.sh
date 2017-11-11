@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 SSH_KEY=/Users/dan/.ssh/vultr
 REMOTE_HOST=build.danstutzman.com
