@@ -24,7 +24,7 @@ lsof -i :8086 || docker run -d \
 
 # Create InfluxDB admin user (idempotently)
 INFLUXDB_PASSWORD=`cat /root/gopath/src/github.com/danielstutzman/sync-log-files-to-db/config/config.json.prod | python3 -c 'import json, sys; [print(v["InfluxDb"]["Password"]) for k, v in json.load(sys.stdin).items() if "InfluxDb" in v]' | head -1`
-echo "influx -username admin -password $INFLUXDB_PASSWORD -precision rfc3339 \"\$@\"" > /root/influx
+echo "influx -username admin -password $INFLUXDB_PASSWORD -database mydb -precision rfc3339 \"\$@\"" > /root/influx
 chmod +x /root/influx
 /root/influx -execute \
   "CREATE USER admin WITH PASSWORD '$INFLUXDB_PASSWORD' WITH ALL PRIVILEGES"
