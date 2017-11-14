@@ -17,6 +17,7 @@ cat /root/influxdb.conf.bak \
 
 # If nothing is listening on port 8086, start InfluxDB on port 8086
 lsof -i :8086 || docker run -d \
+  --name=influxdb \
   -p 8086:8086 \
   -v /root/influxdb.conf:/etc/influxdb/influxdb.conf:ro \
   --restart unless-stopped \
@@ -44,6 +45,7 @@ rm -f /root/gopath/src/github.com/danielstutzman/sync-log-files-to-db/sync-log-f
 
 # If nothing is listening on port 8086, start sync-log-files-to-db on port 8086
 lsof -i :6380 || docker run -d \
+  --name=sync-log-files-to-db \
   -p 6380:6380 \
   -v /etc/ssl/certs:/etc/ssl/certs:ro \
   -v /root/gopath/src/github.com/danielstutzman/sync-log-files-to-db/config:/root/config:ro \
