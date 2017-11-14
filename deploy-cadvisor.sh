@@ -10,6 +10,7 @@ docker ps -a -f ancestor=google/cadvisor:latest --format={{.ID}} \
 docker ps -a -f ancestor=google/cadvisor:latest --format={{.ID}} \
     | xargs --no-run-if-empty docker rm
 
+/root/influx -execute "CREATE DATABASE cadvisor"
 docker run -d \
   --name=cadvisor \
   -p 8080:8080 \
