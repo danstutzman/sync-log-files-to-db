@@ -23,7 +23,8 @@ lsof -i :8086 || docker run -d \
   -v /root/influxdb/data:/var/lib/influxdb \
   -v /root/influxdb.conf:/etc/influxdb/influxdb.conf:ro \
   --restart unless-stopped \
-  influxdb -config /etc/influxdb/influxdb.conf && sleep 1
+  influxdb -config /etc/influxdb/influxdb.conf
+sleep 1
 
 # Create InfluxDB admin user (idempotently)
 INFLUXDB_PASSWORD=`cat /root/gopath/src/github.com/danielstutzman/sync-log-files-to-db/config/config.json.prod | python3 -c 'import json, sys; [print(v["InfluxDb"]["Password"]) for k, v in json.load(sys.stdin).items() if "InfluxDb" in v]' | head -1`
