@@ -5,6 +5,7 @@
 /config/config.json.prod
 /config/s3.creds.ini
 /config/redis_input.txt.prod
+/config/INFLUXDB_PASSWORD
 /CreateThumbnail-data.json
 /build
 .*.swp
