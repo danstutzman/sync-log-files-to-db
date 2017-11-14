@@ -18,6 +18,7 @@ var TAIL_LOG_LINE_FLUSH_TIMEOUT = time.Second
 var INFLUXDB_TAGS_SET = map[string]bool{
 	"container_id": true,
 	"image_name":   true,
+	"status_code":  true,
 }
 var LOGS_TIMEOUT = time.Duration(1 * time.Second)
 
@@ -144,7 +145,9 @@ func appendLogLineToMaps(logLine LogLine, maps []map[string]interface{}) []map[s
 		"timestamp":    logLine.Timestamp,
 		"container_id": logLine.ContainerId,
 		"image_name":   logLine.ImageName,
-		"message":      logLine.Message,
 	}
+
+	augmentMapWithParsedMessage(logLineAsMap, logLine.Message)
+
 	return append(maps, logLineAsMap)
 }
