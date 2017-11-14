@@ -16,9 +16,11 @@ cat /root/influxdb.conf.bak \
   > /root/influxdb.conf
 
 # If nothing is listening on port 8086, start InfluxDB on port 8086
+mkdir -p /root/influxdb/data
 lsof -i :8086 || docker run -d \
   --name=influxdb \
   -p 8086:8086 \
+  -v /root/influxdb/data:/var/lib/influxdb \
   -v /root/influxdb.conf:/etc/influxdb/influxdb.conf:ro \
   --restart unless-stopped \
   influxdb -config /etc/influxdb/influxdb.conf && sleep 1
