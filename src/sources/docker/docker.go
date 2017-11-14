@@ -14,7 +14,7 @@ import (
 
 const MAX_INFLUXDB_INSERT_BATCH_SIZE = 100
 
-var TAIL_LOG_LINE_FLUSH_TIMEOUT = time.Millisecond * 100
+var TAIL_LOG_LINE_FLUSH_TIMEOUT = time.Second
 var INFLUXDB_TAGS_SET = map[string]bool{
 	"container_id": true,
 	"image_name":   true,
