@@ -33,19 +33,6 @@ chmod +x /root/influx
 /root/influx -execute \
   "CREATE USER admin WITH PASSWORD '$INFLUXDB_PASSWORD' WITH ALL PRIVILEGES"
 
-# Build sync-log-files-to-db Docker image
-docker ps -a -f ancestor=sync-log-files-to-db --format={{.ID}} \
-  | xargs --no-run-if-empty docker stop
-docker ps -a -f ancestor=sync-log-files-to-db --format={{.ID}} \
-  | xargs --no-run-if-empty docker rm
-docker image ls sync-log-files-to-db | grep -q latest && \
-  docker rmi sync-log-files-to-db
-cp /root/gopath/bin/sync-log-files-to-db \
-  /root/gopath/src/github.com/danielstutzman/sync-log-files-to-db/sync-log-files-to-db
-docker build /root/gopath/src/github.com/danielstutzman/sync-log-files-to-db \
-  -t sync-log-files-to-db
-rm -f /root/gopath/src/github.com/danielstutzman/sync-log-files-to-db/sync-log-files-to-db
-
 # If nothing is listening on port 8086, start sync-log-files-to-db on port 8086
 lsof -i :6380 || docker run -d \
   --name=sync-log-files-to-db \
