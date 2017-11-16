@@ -2,22 +2,15 @@ package s3
 
 import (
 	"log"
-
-	"github.com/danielstutzman/sync-log-files-to-db/src/storage/bigquery"
-	"github.com/danielstutzman/sync-log-files-to-db/src/storage/influxdb"
 )
 
 const DEFAULT_SECONDS_BETWEEN_POLLS = 5 * 60
 const DEFAULT_PATHS_PER_BATCH = 100
 
 type Options struct {
-	CredsPath           string
-	Region              string
-	BucketName          string
-	BigQuery            *bigquery.Options
-	InfluxDb            *influxdb.Options
-	SecondsBetweenPolls int
-	PathsPerBatch       int
+	CredsPath  string
+	Region     string
+	BucketName string
 }
 
 func ValidateOptions(options *Options) {
@@ -30,20 +23,5 @@ func ValidateOptions(options *Options) {
 	if options.BucketName == "" {
 		log.Fatalf("Missing S3.BucketName")
 	}
-	if options.SecondsBetweenPolls == 0 {
-		options.SecondsBetweenPolls = DEFAULT_SECONDS_BETWEEN_POLLS
-	}
-	if options.PathsPerBatch == 0 {
-		options.PathsPerBatch = DEFAULT_PATHS_PER_BATCH
-	}
 
-	if options.BigQuery == nil && options.InfluxDb == nil {
-		log.Fatalf("Specify either S3.BigQuery or S3.InfluxDb")
-	}
-	if options.BigQuery != nil {
-		bigquery.ValidateOptions(options.BigQuery)
-	}
-	if options.InfluxDb != nil {
-		influxdb.ValidateOptions(options.InfluxDb)
-	}
 }

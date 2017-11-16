@@ -1,24 +1,16 @@
-package s3
+package s3_belugacdn
 
 import (
 	"bufio"
-	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"io"
 )
 
-func (s3Connection *S3Connection) DownloadVisitsForPath(path string) []map[string]string {
-
-	body := s3Connection.DownloadPath(path)
-	reader, err := gzip.NewReader(body)
-	if err != nil {
-		panic(fmt.Errorf("Error from gzip.NewReader: %s", err))
-	}
-	defer reader.Close()
+func readJsonIntoVisitMaps(reader io.Reader) []map[string]string {
+	visits := []map[string]string{}
 
 	scanner := bufio.NewScanner(reader)
-
-	visits := []map[string]string{}
 	for scanner.Scan() {
 		visit := map[string]string{}
 		err := json.Unmarshal([]byte(scanner.Text()), &visit)

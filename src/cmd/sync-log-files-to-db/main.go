@@ -8,13 +8,13 @@ import (
 
 	"github.com/danielstutzman/sync-log-files-to-db/src/sources/docker"
 	"github.com/danielstutzman/sync-log-files-to-db/src/sources/redis"
-	my_s3 "github.com/danielstutzman/sync-log-files-to-db/src/sources/s3"
+	"github.com/danielstutzman/sync-log-files-to-db/src/sources/s3_belugacdn"
 )
 
 type Config struct {
 	ListenOnFakeRedisForBelugaCDNLogs *redis.Options
 	WatchDockerJsonFiles              *docker.Options
-	WatchS3                           *my_s3.Options
+	WatchS3BelugaCDN                  *s3_belugacdn.Options
 }
 
 func readConfig() (*Config, string) {
@@ -49,10 +49,10 @@ func main() {
 		docker.ValidateOptions(config.WatchDockerJsonFiles)
 		go docker.TailDockerLogsForever(config.WatchDockerJsonFiles, configPath)
 	}
-	if config.WatchS3 != nil {
+	if config.WatchS3BelugaCDN != nil {
 		startedOne = true
-		my_s3.ValidateOptions(config.WatchS3)
-		go my_s3.PollForever(config.WatchS3, configPath)
+		s3_belugacdn.ValidateOptions(config.WatchS3BelugaCDN)
+		go s3_belugacdn.PollForever(config.WatchS3BelugaCDN, configPath)
 	}
 
 	if startedOne {
