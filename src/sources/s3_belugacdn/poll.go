@@ -27,7 +27,7 @@ func PollForever(opts *Options, configPath string) {
 
 	for {
 		visits := []map[string]string{}
-		s3Paths := s3Conn.ListPaths(int64(opts.PathsPerBatch))
+		s3Paths := s3Conn.ListPaths("", int64(opts.PathsPerBatch))
 		for _, s3Path := range s3Paths {
 			reader := s3Conn.DownloadPath(s3Path)
 			visits = append(visits, readJsonIntoVisitMaps(reader)...)

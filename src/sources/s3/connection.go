@@ -43,7 +43,7 @@ func NewS3Connection(opts *Options, configPath string) *S3Connection {
 	}
 }
 
-func (conn *S3Connection) ListPaths(maxKeys int64) []string {
+func (conn *S3Connection) ListPaths(prefix string, maxKeys int64) []string {
 	var response *s3.ListObjectsV2Output
 	var err error
 
@@ -52,6 +52,7 @@ func (conn *S3Connection) ListPaths(maxKeys int64) []string {
 		response, err = conn.service.ListObjectsV2(&s3.ListObjectsV2Input{
 			Bucket:  aws.String(conn.bucketName),
 			MaxKeys: aws.Int64(maxKeys),
+			Prefix:  aws.String(prefix),
 		})
 		if err != nil {
 			err2, isRequestFailure := err.(awserr.RequestFailure)
