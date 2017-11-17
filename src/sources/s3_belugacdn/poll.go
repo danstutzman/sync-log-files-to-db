@@ -29,13 +29,7 @@ func PollForever(opts *Options, configPath string) {
 		visits := []map[string]string{}
 		s3Paths := s3Conn.ListPaths(int64(opts.PathsPerBatch))
 		for _, s3Path := range s3Paths {
-			body := s3Conn.DownloadPath(s3Path)
-			reader, err := gzip.NewReader(body)
-			if err != nil {
-				panic(fmt.Errorf("Error from gzip.NewReader: %s", err))
-			}
-			defer reader.Close()
-
+			reader := s3Conn.DownloadPath(s3Path)
 			visits = append(visits, readJsonIntoVisitMaps(reader)...)
 		}
 

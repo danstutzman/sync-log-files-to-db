@@ -1,10 +1,12 @@
 package s3
 
 import (
+	"compress/gzip"
 	"fmt"
 	"io"
 	"log"
 	"path"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -115,7 +117,17 @@ func (conn *S3Connection) DownloadPath(path string) io.ReadCloser {
 		}
 	}
 
-	return response.Body
+	if strings.HasSuffix(path, ".gz") &&
+		*response.ContentType == "binary/octet-stream" {
+
+		reader, err := gzip.NewReader(response.Body)
+		if err != nil {
+			panic(fmt.Errorf("Error from gzip.NewReader: %s", err))
+		}
+		return reader
+	} else {
+		return response.Body
+	}
 }
 
 func (conn *S3Connection) DeletePath(path string) {
