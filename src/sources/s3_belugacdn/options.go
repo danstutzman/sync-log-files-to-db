@@ -8,15 +8,13 @@ import (
 	"github.com/danielstutzman/sync-log-files-to-db/src/storage/influxdb"
 )
 
-const DEFAULT_SECONDS_BETWEEN_POLLS = 5 * 60
 const DEFAULT_PATHS_PER_BATCH = 100
 
 type Options struct {
-	S3                  *s3.Options
-	BigQuery            *bigquery.Options
-	InfluxDb            *influxdb.Options
-	PathsPerBatch       int
-	SecondsBetweenPolls int
+	S3            *s3.Options
+	BigQuery      *bigquery.Options
+	InfluxDb      *influxdb.Options
+	PathsPerBatch int
 }
 
 func ValidateOptions(options *Options) {
@@ -32,8 +30,5 @@ func ValidateOptions(options *Options) {
 
 	if options.PathsPerBatch == 0 {
 		options.PathsPerBatch = DEFAULT_PATHS_PER_BATCH
-	}
-	if options.SecondsBetweenPolls == 0 {
-		options.SecondsBetweenPolls = DEFAULT_SECONDS_BETWEEN_POLLS
 	}
 }

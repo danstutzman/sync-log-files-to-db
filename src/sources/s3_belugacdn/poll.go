@@ -1,8 +1,6 @@
 package s3_belugacdn
 
 import (
-	"compress/gzip"
-	"fmt"
 	"log"
 	"time"
 
@@ -10,6 +8,8 @@ import (
 	"github.com/danielstutzman/sync-log-files-to-db/src/storage/bigquery"
 	"github.com/danielstutzman/sync-log-files-to-db/src/storage/influxdb"
 )
+
+const SECONDS_BETWEEN_POLLS = 5 * 60
 
 func PollForever(opts *Options, configPath string) {
 	s3Conn := s3.NewS3Connection(opts.S3, configPath)
@@ -45,7 +45,7 @@ func PollForever(opts *Options, configPath string) {
 			s3Conn.DeletePath(s3Path)
 		}
 
-		log.Printf("Wait %ds for next S3 batch...", opts.SecondsBetweenPolls)
-		time.Sleep(time.Duration(opts.SecondsBetweenPolls) * time.Second)
+		log.Printf("Wait %ds for next S3 batch...", SECONDS_BETWEEN_POLLS)
+		time.Sleep(SECONDS_BETWEEN_POLLS * time.Second)
 	}
 }
