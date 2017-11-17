@@ -139,10 +139,27 @@ func (conn *BigqueryConnection) CreateTable(tableName string,
 }
 
 func (conn *BigqueryConnection) InsertRows(tableName string,
-	createDataset func(), createTable func(), rows []*bigquery.TableDataInsertAllRequestRows) {
+	createDataset func(),
+	createTable func(),
+	maps []map[string]interface{},
+	uniqueColumnName string) {
 
 	var err error
 	err = backoff.Retry(func() error {
+		rows := make([]*bigquery.TableDataInsertAllRequestRows, 0)
+		for _, m := range maps {
+			m2 := map[string]bigquery.JsonValue{}
+			for key, value := range m {
+				m2[key] = value
+			}
+
+			row := &bigquery.TableDataInsertAllRequestRows{
+				InsertId: m[uniqueColumnName].(string),
+				Json:     m2,
+			}
+			rows = append(rows, row)
+		}
+
 		log.Printf("Inserting rows to %s...", tableName)
 		result, err := conn.service.Tabledata.InsertAll(conn.projectId, conn.datasetName,
 			tableName, &bigquery.TableDataInsertAllRequest{Rows: rows}).Do()
@@ -159,7 +176,7 @@ func (conn *BigqueryConnection) InsertRows(tableName string,
 		if len(result.InsertErrors) > 0 {
 			for _, errorGroup := range result.InsertErrors {
 				for _, e := range errorGroup.Errors {
-					log.Printf("InsertError: %v, %v", e.Message, e.Reason)
+					log.Printf("InsertError: %+v", e)
 				}
 			}
 			return backoff.Permanent(fmt.Errorf("Got InsertErrors"))

@@ -3,14 +3,9 @@ package influxdb
 import (
 	"fmt"
 	"log"
-	"regexp"
-	"strconv"
 
 	clientPkg "github.com/influxdata/influxdb/client/v2"
 )
-
-var INTEGER_REGEXP = regexp.MustCompile("^[0-9]+$")
-var FLOAT_REGEXP = regexp.MustCompile("^[0-9]+\\.[0-9]+$")
 
 type InfluxdbConnection struct {
 	client          clientPkg.Client
@@ -42,26 +37,4 @@ func (conn *InfluxdbConnection) CreateDatabase() {
 	if err != nil {
 		log.Fatalf("Error from %s: %s", command, err)
 	}
-}
-
-func toInt(key, value string) int64 {
-	if !INTEGER_REGEXP.MatchString(value) {
-		log.Fatalf("Unexpected characters in field %s: '%s'", key, value)
-	}
-	i, err := strconv.ParseInt(value, 10, 64)
-	if err != nil {
-		log.Fatalf("Error from Atoi: %s", err)
-	}
-	return i
-}
-
-func toFloat(key, value string) float64 {
-	if !FLOAT_REGEXP.MatchString(value) {
-		log.Fatalf("Unexpected characters in field %s: '%s'", key, value)
-	}
-	f, err := strconv.ParseFloat(value, 64)
-	if err != nil {
-		log.Fatalf("Error from ParseFloat: %s", err)
-	}
-	return f
 }

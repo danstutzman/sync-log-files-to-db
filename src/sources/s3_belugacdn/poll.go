@@ -26,7 +26,7 @@ func PollForever(opts *Options, configPath string) {
 	}
 
 	for {
-		visits := []map[string]string{}
+		visits := []map[string]interface{}{}
 		s3Paths := s3Conn.ListPaths("", int64(opts.PathsPerBatch))
 		for _, s3Path := range s3Paths {
 			reader := s3Conn.DownloadPath(s3Path)
@@ -35,10 +35,14 @@ func PollForever(opts *Options, configPath string) {
 
 		if len(visits) > 0 {
 			if bigqueryConn != nil {
-				bigqueryConn.UploadVisits(visits)
+				bigqueryConn.InsertRows("visits",
+					func() { bigqueryConn.CreateDataset() },
+					func() { createVisitsTable(bigqueryConn) },
+					visits,
+					"trace")
 			}
 			if influxdbConn != nil {
-				influxdbConn.InsertVisits(visits)
+				influxdbConn.InsertMaps(VISITS_TAG_SET, visits)
 			}
 		}
 		for _, s3Path := range s3Paths {
