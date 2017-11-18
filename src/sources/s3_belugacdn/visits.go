@@ -55,6 +55,7 @@ func readJsonIntoVisitMaps(reader io.Reader) []map[string]interface{} {
 			"geo_continent_code": visit["geo_continent_code"],
 			"geo_country":        visit["geo_country"],
 			"geo_country_code":   visit["geo_country_code"],
+			"host":               visit["host"],
 		}
 
 		visitMaps = append(visitMaps, visitMap)
