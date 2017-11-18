@@ -284,6 +284,25 @@
 			"revisionTime": "2017-01-30T11:31:45Z"
 		},
 		{
+			"checksumSHA1": "HedK9m8E8iyib4bIBtIX7xprOgo=",
+			"path": "go.uber.org/atomic",
+			"revision": "8474b86a5a6f79c443ce4b2992817ff32cf208b8",
+			"revisionTime": "2017-11-14T20:44:01Z"
+		},
+		{
+			"checksumSHA1": "JDGx7hehaQunZySwPs7yvdUs2m8=",
+			"path": "go.uber.org/multierr",
+			"revision": "fb7d312c2c04c34f0ad621048bbb953b168f9ff6",
+			"revisionTime": "2017-08-29T22:43:07Z"
+		},
+		{
+			"checksumSHA1": "XsKtlSiklZ1A+EQK5KL2Ry0qoi4=",
+			"path": "go.uber.org/zap",
+			"revision": "f85c78b1dd998214c5f2138155b320a4a43fbe36",
+			"revisionTime": "2017-10-30T23:38:06Z",
+			"tree": true
+		},
+		{
 			"checksumSHA1": "Y+HGqEkYM15ir+J93MEaHdyFy0c=",
 			"path": "golang.org/x/net/context",
 			"revision": "5602c733f70afc6dcec6766be0d5034d4c4f14de",
