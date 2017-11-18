@@ -1,10 +1,10 @@
 package s3_cloudtrail
 
 import (
-	"log"
 	"strings"
 	"time"
 
+	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 	"github.com/danielstutzman/sync-log-files-to-db/src/sources/s3"
 	"github.com/danielstutzman/sync-log-files-to-db/src/storage/bigquery"
 	"github.com/danielstutzman/sync-log-files-to-db/src/storage/influxdb"
@@ -43,7 +43,7 @@ func PollForever(opts *Options, configPath string) {
 			} else if strings.Contains(s3Path, "/CloudTrail-Digest/") {
 				// ignore it
 			} else {
-				log.Fatalf("Unexpected path %s", s3Path)
+				log.Fatalw("Unexpected S3 path", "path", s3Path)
 			}
 		}
 
@@ -64,7 +64,7 @@ func PollForever(opts *Options, configPath string) {
 			s3Conn.DeletePath(s3Path)
 		}
 
-		log.Printf("Wait %ds for next S3 batch...", SECONDS_BETWEEN_POLLS)
+		log.Infow("Wait for next S3 batch...", "seconds", SECONDS_BETWEEN_POLLS)
 		time.Sleep(SECONDS_BETWEEN_POLLS * time.Second)
 	}
 }

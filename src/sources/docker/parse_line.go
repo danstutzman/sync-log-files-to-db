@@ -1,8 +1,10 @@
 package docker
 
 import (
-	"log"
+	"fmt"
 	"regexp"
+
+	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 )
 
 var BRACKET_PREFIX_REGEX = regexp.MustCompile(`\[([^]]*)\]\s(.*)?`)
@@ -22,7 +24,7 @@ func main() {
 	m := map[string]interface{}{}
 	augmentMapWithParsedMessage(m,
 		`[httpd] 172.17.0.1 - admin [14/Nov/2017:18:07:37 +0000] "POST /write?consistency=&db=cadvisor&precision=&rp= HTTP/1.1" 204 0 "-" "cAdvisor/v0.25.0" b2a56f99-c966-11e7-9094-000000000000 18084`)
-	log.Printf("map: %v", m)
+	log.Infow("map", fmt.Sprintf("%+v", m))
 }
 
 func augmentMapWithParsedMessage(m map[string]interface{}, message string) {

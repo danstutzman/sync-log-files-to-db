@@ -1,7 +1,7 @@
 package bigquery
 
 import (
-	"log"
+	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 )
 
 type Options struct {
@@ -21,12 +21,12 @@ func Usage() string {
 
 func ValidateOptions(options *Options) {
 	if options.GcloudPemPath == "" {
-		log.Fatalf("Missing Bigquery.GcloudPemPath")
+		log.Fatalw("Missing Bigquery.GcloudPemPath")
 	}
 	if options.GcloudProjectId == "" {
-		log.Fatalf("Missing Bigquery.GcloudProjectId")
+		log.Fatalw("Missing Bigquery.GcloudProjectId")
 	}
 	if options.DatasetName == "" {
-		log.Fatalf("Missing Bigquery.DatasetName")
+		log.Fatalw("Missing Bigquery.DatasetName")
 	}
 }

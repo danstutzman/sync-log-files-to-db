@@ -5,9 +5,10 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"io"
-	"log"
 	"regexp"
 	"time"
+
+	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 )
 
 const DOCKER_LOG_TIME_FORMAT = "2006-01-02T15:04:05.999999999Z"
@@ -35,24 +36,24 @@ type JsonFileLog struct {
 func tailLogLinesForJsonFile(out io.Reader, containerId, imageName string,
 	logLinesChan chan<- LogLine) {
 
-	log.Printf("Tail for container %s image %s (json file)", containerId, imageName)
+	log.Infow("tailLogLinesForJsonFile", "container_id", containerId[:10], "image_name", imageName)
 
 	scanner := bufio.NewScanner(out)
 	for scanner.Scan() {
 		if scanner.Err() != nil {
-			log.Fatalf("Error from scanner.Err: %s", scanner.Err())
+			log.Fatalw("Error from scanner.Err", "err", scanner.Err())
 		}
 		jsonFileLogJson := scanner.Bytes()
 
 		jsonFileLog := JsonFileLog{}
 		err := json.Unmarshal(jsonFileLogJson, &jsonFileLog)
 		if err != nil {
-			log.Fatalf("Error from json.Unmarshal: %s", err)
+			log.Fatalw("Error from json.Unmarshal", "err", err)
 		}
 
 		timestamp, err := time.Parse(DOCKER_LOG_TIME_FORMAT, jsonFileLog.Time)
 		if err != nil {
-			log.Fatalf("Can't parse timestamp %s", jsonFileLog.Time)
+			log.Fatalw("Can't parse timestamp", "time", jsonFileLog.Time)
 		}
 
 		logLinesChan <- LogLine{
@@ -67,17 +68,17 @@ func tailLogLinesForJsonFile(out io.Reader, containerId, imageName string,
 
 func tailLogLines(out io.Reader, containerId, imageName string,
 	noTimeoutChan chan<- bool, logLinesChan chan<- LogLine) {
-	log.Printf("Tail for container %s image %s (Docker API)", containerId, imageName)
+	log.Infow("tailLogLines", "container_id", containerId[:10], "image_name", imageName)
 
 	reader := bufio.NewReader(out)
 	possibleHeader, err := reader.Peek(8)
 	noTimeoutChan <- true
 	if err != nil {
 		if err == io.EOF {
-			log.Printf("EOF from logs of %s", containerId)
+			log.Infow("EOF from logs", "containerId", containerId[:10])
 			return
 		} else {
-			log.Fatalf("Error from Peek: %s", err)
+			log.Fatalw("Error from Peek", "err", err)
 		}
 	}
 
@@ -93,7 +94,7 @@ func tailLogLines(out io.Reader, containerId, imageName string,
 				if err == io.EOF {
 					return
 				}
-				log.Fatalf("Error from ReadBytes: %s", err)
+				log.Fatalw("Error from ReadBytes", "err", err)
 			}
 
 			// Parse timestamp in line
@@ -101,7 +102,7 @@ func tailLogLines(out io.Reader, containerId, imageName string,
 			timestamp, err := time.Parse(DOCKER_LOG_TIME_FORMAT, string(match[1]))
 			message := string(match[2])
 			if err != nil {
-				log.Fatalf("Can't parse timestamp %s", string(match[1]))
+				log.Fatalw("Can't parse timestamp", "timestamp", match[1])
 			}
 
 			logLine := LogLine{
@@ -137,10 +138,10 @@ func readLogLineBlocking(out io.Reader) *LogLine {
 		return nil
 	}
 	if numBytes < 8 {
-		log.Fatalf("Expected 8 but got %d", numBytes)
+		log.Fatalw("Expected 8 but got", "num_bytes", numBytes)
 	}
 	if err != nil {
-		log.Fatalf("Error from Read: %s", err)
+		log.Fatalw("Error from Read", "err", err)
 	}
 
 	// Parse files out of header
@@ -155,19 +156,19 @@ func readLogLineBlocking(out io.Reader) *LogLine {
 		line = append(line[0:numBytes], []byte("(truncated)")...)
 	}
 	if err != nil {
-		log.Fatalf("Error from Read: %s", err)
+		log.Fatalw("Error from Read", "err", err)
 	}
 
 	// Parse timestamp in line
 	match := DOCKER_LOG_LINE_REGEXP.FindSubmatch(line)
 	if len(match) == 0 {
-		log.Printf("No DOCKER_LOG_LINE_REGEXP match for line: %s", line)
+		log.Fatalw("No DOCKER_LOG_LINE_REGEXP match", "line", line)
 		return nil
 	} else {
 		timestamp, err := time.Parse(DOCKER_LOG_TIME_FORMAT, string(match[1]))
 		message := string(match[2])
 		if err != nil {
-			log.Fatalf("Can't parse timestamp %s", string(match[1]))
+			log.Fatalw("Can't parse timestamp", "timestamp", match[1])
 		}
 
 		return &LogLine{

@@ -3,11 +3,11 @@ package bigquery
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"path"
 	"strconv"
 
 	"github.com/cenkalti/backoff"
+	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	bigquery "google.golang.org/api/bigquery/v2"
@@ -44,18 +44,18 @@ func NewBigqueryConnection(opts *Options, configPath string) *BigqueryConnection
 	gcloudPemPath := path.Join(path.Dir(configPath), opts.GcloudPemPath)
 	pemKeyBytes, err := ioutil.ReadFile(gcloudPemPath)
 	if err != nil {
-		log.Fatalf("Error from ioutil.ReadFile: %s", err)
+		log.Fatalw("Error from ioutil.ReadFile", "err", err)
 	}
 
 	token, err := google.JWTConfigFromJSON(pemKeyBytes, bigquery.BigqueryScope)
 	if err != nil {
-		log.Fatalf("Error from google.JWTConfigFromJSON: %s", err)
+		log.Fatalw("Error from google.JWTConfigFromJSON", "err", err)
 	}
 	client := token.Client(oauth2.NoContext)
 
 	service, err := bigquery.New(client)
 	if err != nil {
-		log.Fatalf("Error from bigquery.New: %s", err)
+		log.Fatalw("Error from bigquery.New", "err", err)
 	}
 
 	return &BigqueryConnection{
@@ -69,7 +69,7 @@ func (conn *BigqueryConnection) Query(sql, description string) []*bigquery.Table
 	var response *bigquery.QueryResponse
 	var err error
 	err = backoff.Retry(func() error {
-		log.Printf("Querying %s...", description)
+		log.Infow("Querying", "description", description)
 		response, err = conn.service.Jobs.Query(conn.projectId, &bigquery.QueryRequest{
 			Query:        sql,
 			UseLegacySql: googleapi.Bool(false),
@@ -77,7 +77,7 @@ func (conn *BigqueryConnection) Query(sql, description string) []*bigquery.Table
 		if err != nil {
 			err2, isGoogleApiError := err.(*googleapi.Error)
 			if isGoogleApiError && (err2.Code == 500 || err2.Code == 503) {
-				log.Printf("Got intermittent error (backoff will retry): %s", err2)
+				log.Infow("Got intermittent error (backoff will retry)", "err", err2)
 				return err
 			} else {
 				return backoff.Permanent(err)
@@ -87,14 +87,14 @@ func (conn *BigqueryConnection) Query(sql, description string) []*bigquery.Table
 		}
 	}, backoff.NewExponentialBackOff())
 	if err != nil {
-		log.Fatalf("Error %s; query was %s", err, sql)
+		log.Fatalw("Got error", "err", err, "query", sql)
 	}
 
 	return response.Rows
 }
 
 func (conn *BigqueryConnection) CreateDataset() {
-	log.Printf("Creating %s dataset...", conn.datasetName)
+	log.Infow("Creating dataset...", "datasetName", conn.datasetName)
 	_, err := conn.service.Datasets.Insert(conn.projectId, &bigquery.Dataset{
 		DatasetReference: &bigquery.DatasetReference{
 			ProjectId: conn.projectId,
@@ -116,7 +116,7 @@ func (conn *BigqueryConnection) CreateDataset() {
 func (conn *BigqueryConnection) CreateTable(tableName string,
 	fields []*bigquery.TableFieldSchema) {
 
-	log.Printf("Creating %s table...", tableName)
+	log.Infow("Creating table...", "tableName", tableName)
 	_, err := conn.service.Tables.Insert(conn.projectId, conn.datasetName,
 		&bigquery.Table{
 			Schema: &bigquery.TableSchema{Fields: fields},
@@ -160,13 +160,13 @@ func (conn *BigqueryConnection) InsertRows(tableName string,
 			rows = append(rows, row)
 		}
 
-		log.Printf("Inserting rows to %s...", tableName)
+		log.Infow("Inserting rows...", "tableName", tableName)
 		result, err := conn.service.Tabledata.InsertAll(conn.projectId, conn.datasetName,
 			tableName, &bigquery.TableDataInsertAllRequest{Rows: rows}).Do()
 		if err != nil {
 			err2, isGoogleApiError := err.(*googleapi.Error)
 			if isGoogleApiError && (err2.Code == 500 || err2.Code == 503) {
-				log.Printf("Got intermittent error (backoff will retry): %s", err2)
+				log.Infow("Got intermittent error (backoff will retry)", "err", err2)
 				return err // Retry with backoff
 			} else {
 				return backoff.Permanent(err) // Stop backoff
@@ -176,7 +176,7 @@ func (conn *BigqueryConnection) InsertRows(tableName string,
 		if len(result.InsertErrors) > 0 {
 			for _, errorGroup := range result.InsertErrors {
 				for _, e := range errorGroup.Errors {
-					log.Printf("InsertError: %+v", e)
+					log.Errorw("InsertError", fmt.Sprintf("%+v", e))
 				}
 			}
 			return backoff.Permanent(fmt.Errorf("Got InsertErrors"))

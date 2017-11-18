@@ -2,8 +2,8 @@ package influxdb
 
 import (
 	"fmt"
-	"log"
 
+	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 	clientPkg "github.com/influxdata/influxdb/client/v2"
 )
 
@@ -20,7 +20,7 @@ func NewInfluxdbConnection(opts *Options, configPath string) *InfluxdbConnection
 		Password: opts.Password,
 	})
 	if err != nil {
-		log.Fatalf("Error from NewHTTPClient: %s", err)
+		log.Fatalw("Error from NewHTTPClient", "err", err)
 	}
 
 	return &InfluxdbConnection{
@@ -31,10 +31,10 @@ func NewInfluxdbConnection(opts *Options, configPath string) *InfluxdbConnection
 }
 
 func (conn *InfluxdbConnection) CreateDatabase() {
-	log.Printf("Creating InfluxDB database %s...", conn.databaseName)
+	log.Infow("Creating InfluxDB database...", "databaseName", conn.databaseName)
 	command := fmt.Sprintf("CREATE DATABASE %s", conn.databaseName)
 	_, err := conn.query(command)
 	if err != nil {
-		log.Fatalf("Error from %s: %s", command, err)
+		log.Fatalw("Error from command", "command", command, "err", err)
 	}
 }

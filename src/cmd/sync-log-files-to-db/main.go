@@ -2,10 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 
+	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 	"github.com/danielstutzman/sync-log-files-to-db/src/sources/docker"
 	"github.com/danielstutzman/sync-log-files-to-db/src/sources/redis"
 	"github.com/danielstutzman/sync-log-files-to-db/src/sources/s3_belugacdn"
@@ -21,18 +22,19 @@ type Config struct {
 
 func readConfig() (*Config, string) {
 	if len(os.Args) < 1+1 {
-		log.Fatalf("First argument should be config.json")
+		fmt.Fprintln(os.Stderr, "First argument should be config.json")
+		os.Exit(1)
 	}
 	configPath := os.Args[1]
 
 	var config = &Config{}
 	configJson, err := ioutil.ReadFile(os.Args[1])
 	if err != nil {
-		log.Fatalf("Error from ioutil.ReadFile: %s", err)
+		log.Fatalw("Error from ioutil.ReadFile", "err", err)
 	}
 	err = json.Unmarshal(configJson, &config)
 	if err != nil {
-		log.Fatalf("Error from json.Unmarshal: %s", err)
+		log.Fatalw("Error from json.Unmarshal", "err", err)
 	}
 	return config, configPath
 }
@@ -65,6 +67,7 @@ func main() {
 	if startedOne {
 		select {} // block forever while goroutines run
 	} else {
-		log.Fatalf("No sources specified in config")
+		fmt.Fprintln(os.Stderr, "First argument should be config.json")
+		os.Exit(1)
 	}
 }

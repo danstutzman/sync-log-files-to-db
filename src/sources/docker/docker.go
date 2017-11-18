@@ -3,10 +3,10 @@ package docker
 import (
 	"context"
 	"io"
-	"log"
 	"os"
 	"time"
 
+	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 	"github.com/danielstutzman/sync-log-files-to-db/src/storage/influxdb"
 	"github.com/docker/docker/api/types"
 	"github.com/moby/moby/client"
@@ -28,21 +28,21 @@ func tailContainer(container *types.Container,
 	lastTimestamp := influxdbConn.QueryForLastTimestamp(container.ID)
 	justAfterLastTimestamp := lastTimestamp.Add(time.Nanosecond)
 
-	log.Printf("Tailing logs for container %s (image=%s) after %s...",
-		container.ID[:10], container.Image, lastTimestamp)
+	log.Infow("Tailing logs...", "container_id", container.ID[:10],
+		"image_name", container.Image, "after", lastTimestamp)
 
 	inspect, err := client.ContainerInspect(context.TODO(), container.ID)
 	if err != nil {
-		log.Fatalf("Error from ContainerInspect for %s: %s", container.ID, err)
+		log.Fatalw("Error from ContainerInspect", "container_id", container.ID[:10], "err", err)
 	}
 
 	var reader io.Reader
-	log.Printf("Attempting to open log at %s", inspect.LogPath)
+	log.Infow("Attempting to open log", "path", inspect.LogPath)
 	reader, err = os.Open(inspect.LogPath)
 	if err == nil {
 		tailLogLinesForJsonFile(reader, container.ID, container.Image, logLinesChan)
 	} else if os.IsNotExist(err) {
-		log.Printf("Open failed with error %s", err)
+		log.Infow("Open failed (normal if Docker for Mac)", "err", err)
 		// reassign reader
 		reader, err = client.ContainerLogs(
 			context.TODO(),
@@ -56,7 +56,7 @@ func tailContainer(container *types.Container,
 				Timestamps: true,
 			})
 		if err != nil {
-			log.Fatalf("Error from ContainerLogsOptions: %s", err)
+			log.Fatalw("Error from ContainerLogsOptions", "err", err)
 		}
 
 		noTimeoutChan := make(chan bool, 1)
@@ -65,11 +65,11 @@ func tailContainer(container *types.Container,
 		case <-noTimeoutChan:
 			// Great, successful read without timeout
 		case <-time.After(LOGS_TIMEOUT):
-			log.Fatalf("Timeout after %s trying to read logs from container %s (image=%s)",
-				LOGS_TIMEOUT, container.ID, container.Image)
+			log.Fatalw("Timeout trying to read logs", "container_id", container.ID[:10],
+				"seconds", LOGS_TIMEOUT, "image_name", container.Image)
 		}
 	} else {
-		log.Fatalf("Error from Open: %s", err)
+		log.Fatalw("Error from Open", "err", err)
 	}
 }
 
@@ -82,7 +82,7 @@ func pollForNewContainersForever(client *client.Client,
 		containers, err := client.ContainerList(
 			context.TODO(), types.ContainerListOptions{All: true})
 		if err != nil {
-			log.Fatalf("Error from ContainerList: %s", err)
+			log.Fatalw("Error from ContainerList", "err", err)
 		}
 
 		for _, container := range containers {
@@ -91,8 +91,8 @@ func pollForNewContainersForever(client *client.Client,
 				tailContainer(&container, influxdbConn, client, logLinesChan)
 			}
 		}
-		log.Printf("Wait %ds before polling for new containers...",
-			config.SecondsBetweenPollForNewContainers)
+		log.Infow("Wait before polling for new containers...",
+			"seconds", config.SecondsBetweenPollForNewContainers)
 		time.Sleep(time.Duration(config.SecondsBetweenPollForNewContainers) * time.Second)
 	}
 }
@@ -131,7 +131,7 @@ func TailDockerLogsForever(config *Options, configPath string) {
 
 	client, err := client.NewEnvClient()
 	if err != nil {
-		log.Fatalf("Error from NewEnvClient: %s", err)
+		log.Fatalw("Error from NewEnvClient", "err", err)
 	}
 
 	logLinesChan := make(chan LogLine)

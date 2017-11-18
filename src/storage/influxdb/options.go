@@ -1,7 +1,7 @@
 package influxdb
 
 import (
-	"log"
+	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 )
 
 type Options struct {
@@ -26,12 +26,12 @@ func Usage() string {
 
 func ValidateOptions(options *Options) {
 	if options.Hostname == "" {
-		log.Fatalf("Missing Influxdb.Hostname")
+		log.Fatalw("Missing Influxdb.Hostname")
 	}
 	if options.Port == "" {
-		log.Fatalf("Missing Influxdb.Port")
+		log.Fatalw("Missing Influxdb.Port")
 	}
 	if options.DatabaseName == "" {
-		log.Fatalf("Missing Influxdb.DatabaseName")
+		log.Fatalw("Missing Influxdb.DatabaseName")
 	}
 }

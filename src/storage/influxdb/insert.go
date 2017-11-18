@@ -1,9 +1,9 @@
 package influxdb
 
 import (
-	"log"
 	"time"
 
+	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 	clientPkg "github.com/influxdata/influxdb/client/v2"
 )
 
@@ -15,7 +15,7 @@ func (conn *InfluxdbConnection) InsertMaps(tagsSet map[string]bool,
 		Database: conn.databaseName,
 	})
 	if err != nil {
-		log.Fatalf("Error from NewBatchPoints: %s", err)
+		log.Fatalw("Error from NewBatchPoints", "err", err)
 	}
 
 	for _, mapUnfiltered := range maps {
@@ -34,12 +34,12 @@ func (conn *InfluxdbConnection) InsertMaps(tagsSet map[string]bool,
 		point, err := clientPkg.NewPoint(conn.measurementName, tags,
 			fields, mapUnfiltered["timestamp"].(time.Time))
 		if err != nil {
-			log.Fatalf("Error from NewPoint: %s", err)
+			log.Fatalw("Error from NewPoint", "err", err)
 		}
 		points.AddPoint(point)
 	}
 
 	if err := conn.client.Write(points); err != nil {
-		log.Fatalf("Error from Write: %s", err)
+		log.Fatalw("Error from Write", "err", err)
 	}
 }

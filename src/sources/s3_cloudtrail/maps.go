@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"time"
+
+	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 )
 
 type File struct {
@@ -51,20 +52,20 @@ type Attributes struct {
 func readJsonIntoEventMaps(reader io.Reader) []map[string]interface{} {
 	fileJson, err := ioutil.ReadAll(reader)
 	if err != nil {
-		panic(fmt.Errorf("Error from ReadAll: %s", err))
+		log.Fatalw("Error from ReadAll", "err", err)
 	}
 
 	file := File{}
 	err = json.Unmarshal(fileJson, &file)
 	if err != nil {
-		panic(fmt.Errorf("Error from json.Unmarshal: %s", err))
+		log.Fatalw("Error from Unmarshal", "err", err)
 	}
 
 	maps := []map[string]interface{}{}
 	for _, record := range file.Records {
 		timestamp, err := time.Parse(time.RFC3339, record.EventTime)
 		if err != nil {
-			log.Fatalf("Couldn't parse eventTime='%s'", timestamp)
+			log.Fatalw("Can't parse timestamp", "eventTime", timestamp)
 		}
 
 		m := map[string]interface{}{

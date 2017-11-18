@@ -3,10 +3,10 @@ package influxdb
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
+	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 	clientPkg "github.com/influxdata/influxdb/client/v2"
 )
 
@@ -18,25 +18,25 @@ func (conn *InfluxdbConnection) QueryForLastTimestamp(containerId string) time.T
 
 	results, err := conn.query(command)
 	if err != nil {
-		log.Fatalf("Error from query %s: %s", command, err)
+		log.Fatalw("Error from query", "query", command, "err", err)
 	}
 
 	if len(results) == 0 {
 		return time.Unix(0, 0)
 	} else if len(results) > 1 {
-		log.Fatalf("Expected one or zero results but got %d", len(results))
+		log.Fatalw("Expected one or zero results", "got", len(results))
 	}
 
 	if len(results[0].Series) == 0 {
 		// No rows so return earliest possible time
 		return time.Unix(0, 0)
 	} else if len(results[0].Series) > 1 {
-		log.Fatalf("Expected one or zero for len(Series) but got %d", len(results[0].Series))
+		log.Fatalw("Expected one or zero for len(Series)", "got", len(results[0].Series))
 	}
 	row := results[0].Series[0]
 
 	if len(row.Values) != 1 {
-		log.Fatalf("Expected series.Values to be 1 but was %d", len(row.Values))
+		log.Fatalw("Expected series.Values to be 1", "got", len(row.Values))
 	}
 	values := row.Values[0]
 
@@ -44,12 +44,12 @@ func (conn *InfluxdbConnection) QueryForLastTimestamp(containerId string) time.T
 		if columnName == "time" {
 			nanos, err := values[columnNum].(json.Number).Int64()
 			if err != nil {
-				log.Fatalf("Can't convert %v to Int64", values[columnNum])
+				log.Fatalw("Can't convert to Int64", "got", values[columnNum])
 			}
 			return time.Unix(0, nanos).UTC()
 		}
 	}
-	log.Fatalf("Couldn't find time column in query result %v", results)
+	log.Fatalw("Couldn't find time column in query result", "results", results)
 	return time.Unix(0, 0).UTC() // this line is never reached
 }
 

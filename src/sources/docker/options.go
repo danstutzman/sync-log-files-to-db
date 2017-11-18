@@ -1,8 +1,7 @@
 package docker
 
 import (
-	"log"
-
+	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 	"github.com/danielstutzman/sync-log-files-to-db/src/storage/influxdb"
 )
 
@@ -20,7 +19,7 @@ func ValidateOptions(options *Options) {
 	}
 
 	if options.InfluxDb == nil {
-		log.Fatalf("Missing Docker.InfluxDb")
+		log.Fatalw("Missing Docker.InfluxDb")
 	}
 	influxdb.ValidateOptions(options.InfluxDb)
 }

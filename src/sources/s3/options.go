@@ -1,11 +1,8 @@
 package s3
 
 import (
-	"log"
+	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 )
-
-const DEFAULT_SECONDS_BETWEEN_POLLS = 5 * 60
-const DEFAULT_PATHS_PER_BATCH = 100
 
 type Options struct {
 	CredsPath  string
@@ -15,13 +12,12 @@ type Options struct {
 
 func ValidateOptions(options *Options) {
 	if options.CredsPath == "" {
-		log.Fatalf("Missing S3.CredsPath")
+		log.Fatalw("Missing S3.CredsPath")
 	}
 	if options.Region == "" {
-		log.Fatalf("Missing S3.Region")
+		log.Fatalw("Missing S3.Region")
 	}
 	if options.BucketName == "" {
-		log.Fatalf("Missing S3.BucketName")
+		log.Fatalw("Missing S3.BucketName")
 	}
-
 }

@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"regexp"
 	"strconv"
 	"time"
 
+	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 	bigquery "github.com/danielstutzman/sync-log-files-to-db/src/storage/bigquery"
 	googleBigqueryPkg "google.golang.org/api/bigquery/v2"
 )
@@ -68,22 +68,22 @@ func readJsonIntoVisitMaps(reader io.Reader) []map[string]interface{} {
 
 func toInt(key, value string) int64 {
 	if !INTEGER_REGEXP.MatchString(value) {
-		log.Fatalf("Unexpected characters in field %s: '%s'", key, value)
+		log.Fatalw("Unexpected characters", "field", key, "got", value)
 	}
 	i, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
-		log.Fatalf("Error from Atoi: %s", err)
+		log.Fatalw("Error from ParseInt", "err", err)
 	}
 	return i
 }
 
 func toFloat(key, value string) float64 {
 	if !FLOAT_REGEXP.MatchString(value) {
-		log.Fatalf("Unexpected characters in field %s: '%s'", key, value)
+		log.Fatalw("Unexpected characters", "field", key, "got", value)
 	}
 	f, err := strconv.ParseFloat(value, 64)
 	if err != nil {
-		log.Fatalf("Error from ParseFloat: %s", err)
+		log.Fatalw("Error from ParseFloat", "err", err)
 	}
 	return f
 }
