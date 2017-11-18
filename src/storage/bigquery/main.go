@@ -176,7 +176,7 @@ func (conn *BigqueryConnection) InsertRows(tableName string,
 		if len(result.InsertErrors) > 0 {
 			for _, errorGroup := range result.InsertErrors {
 				for _, e := range errorGroup.Errors {
-					log.Errorw("InsertError", fmt.Sprintf("%+v", e))
+					log.Errorw("InsertError", "err", fmt.Sprintf("%+v", e))
 				}
 			}
 			return backoff.Permanent(fmt.Errorf("Got InsertErrors"))
