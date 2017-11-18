@@ -49,6 +49,10 @@ func PollForever(opts *Options, configPath string) {
 			s3Conn.DeletePath(s3Path)
 		}
 
+		if opts.RunOnce {
+			break
+		}
+
 		log.Infow("Wait for next S3 batch...", "seconds", SECONDS_BETWEEN_POLLS)
 		time.Sleep(SECONDS_BETWEEN_POLLS * time.Second)
 	}

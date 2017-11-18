@@ -14,6 +14,7 @@ type Options struct {
 	BigQuery      *bigquery.Options
 	InfluxDb      *influxdb.Options
 	PathsPerBatch int
+	RunOnce       bool
 }
 
 func ValidateOptions(options *Options) {

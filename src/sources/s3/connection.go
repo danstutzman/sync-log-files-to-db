@@ -24,7 +24,9 @@ type S3Connection struct {
 func NewS3Connection(opts *Options, configPath string) *S3Connection {
 	log.Infow("Creating AWS session...")
 	config := aws.Config{
-		Region: aws.String(opts.Region),
+		Region:           aws.String(opts.Region),
+		Endpoint:         aws.String(opts.Endpoint),
+		S3ForcePathStyle: aws.Bool(true),
 	}
 	if opts.CredsPath != "" {
 		credsPath := path.Join(path.Dir(configPath), opts.CredsPath)
@@ -44,13 +46,13 @@ func NewS3Connection(opts *Options, configPath string) *S3Connection {
 }
 
 func (conn *S3Connection) ListPaths(prefix string, maxKeys int64) []string {
-	var response *s3.ListObjectsV2Output
+	var response *s3.ListObjectsOutput
 	var err error
 
 	err = backoff.Retry(func() error {
 		log.Infow("Listing S3 paths...",
 			"bucketName", conn.bucketName, "prefix", prefix, "maxKeys", maxKeys)
-		response, err = conn.service.ListObjectsV2(&s3.ListObjectsV2Input{
+		response, err = conn.service.ListObjects(&s3.ListObjectsInput{
 			Bucket:  aws.String(conn.bucketName),
 			MaxKeys: aws.Int64(maxKeys),
 			Prefix:  aws.String(prefix),

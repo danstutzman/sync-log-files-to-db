@@ -8,6 +8,7 @@ type Options struct {
 	CredsPath  string
 	Region     string
 	BucketName string
+	Endpoint   string
 }
 
 func ValidateOptions(options *Options) {

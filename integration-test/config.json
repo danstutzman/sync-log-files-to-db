@@ -1,0 +1,19 @@
+{
+  "WatchS3BelugaCDN": {
+    "S3": {
+      "CredsPath": "./s3.creds.ini.fake",
+      "Region": "us-east-1",
+      "BucketName": "belugacdn-logs-danstutzman",
+      "Endpoint": "http://localhost:8000"
+    },
+    "PathsPerBatch": 3,
+    "RunOnce": true,
+
+    "InfluxDb": {
+      "Hostname": "127.0.0.1",
+      "Port": "8086",
+      "DatabaseName": "mydb",
+      "MeasurementName": "belugacdn_logs"
+    }
+  }
+}

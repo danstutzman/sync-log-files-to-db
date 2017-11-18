@@ -9,4 +9,5 @@
 /config/INFLUXDB_PASSWORD
 /CreateThumbnail-data.json
 /build
+/integration-test/fixtures
 .*.swp

@@ -1,0 +1,3 @@
+#!/bin/bash -ex
+AWS_ACCESS_KEY_ID=newAccessKey AWS_SECRET_ACCESS_KEY=newSecretKey \
+  aws s3 --endpoint-url=http://localhost:8000 --no-verify-ssl "$@"
