@@ -2,8 +2,10 @@
 
 EXECUTABLE=sync-log-files-to-db
 
-cd $GOPATH/src/github.com/danielstutzman/sync-log-files-to-db
+pushd $GOPATH/src/github.com/danielstutzman/sync-log-files-to-db
 go vet github.com/danielstutzman/sync-log-files-to-db/src/...
+popd
+
 rm -f $GOPATH/bin/$EXECUTABLE
 GOBIN=$GOPATH/bin go install -race github.com/danielstutzman/sync-log-files-to-db/src/...
 exec $GOPATH/bin/$EXECUTABLE "$@"
