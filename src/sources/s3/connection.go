@@ -60,11 +60,11 @@ func (conn *S3Connection) ListPaths(prefix string, maxKeys int64) []string {
 		if err != nil {
 			err2, isRequestFailure := err.(awserr.RequestFailure)
 			if !isRequestFailure {
-				log.Fatalw("Error from ListObjectsV2", "bucket", conn.bucketName, "err", err)
+				log.Fatalw("Error from ListObjects", "bucket", conn.bucketName, "err", err)
 			} else if err2.StatusCode() == 500 || err2.StatusCode() == 503 {
 				// Let the backoff library retry
 			} else {
-				log.Fatalw("Error from ListObjectsV2", "bucket", conn.bucketName, "err", err2)
+				log.Fatalw("Error from ListObjects", "bucket", conn.bucketName, "err", err2)
 			}
 		}
 		return err
@@ -72,9 +72,9 @@ func (conn *S3Connection) ListPaths(prefix string, maxKeys int64) []string {
 	if err != nil {
 		err2, isRequestFailure := err.(awserr.RequestFailure)
 		if !isRequestFailure {
-			log.Fatalw("Error from ListObjectsV2", "bucket", conn.bucketName, "err", err)
+			log.Fatalw("Error from ListObjects", "bucket", conn.bucketName, "err", err)
 		} else {
-			log.Fatalw("Error from ListObjectsV2", "bucket", conn.bucketName, "err", err2)
+			log.Fatalw("Error from ListObjects", "bucket", conn.bucketName, "err", err2)
 		}
 	}
 
