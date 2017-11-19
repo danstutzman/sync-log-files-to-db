@@ -102,11 +102,11 @@ func serveQuery(w http.ResponseWriter, r *http.Request, project string) {
 		"etag": "\"cX5UmbB_R-S07ii743IKGH9YCYM/wLFL5h11OCxiWY3yDLqREwltkXs\"",
 		"schema": {
 			"fields": [
-			{
-				"name": "f0_",
-				"type": "INTEGER",
-				"mode": "NULLABLE"
-			}
+				{
+					"name": "f0_",
+					"type": "INTEGER",
+					"mode": "NULLABLE"
+				}
 			]
 		},
 		"jobReference": {
