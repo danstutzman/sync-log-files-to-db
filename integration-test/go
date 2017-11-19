@@ -10,7 +10,7 @@ lsof -i :8000 || docker run -d \
   scality/s3server
 
 # Setup fixtures in fake S3
-./aws-s3-cli rb s3://belugacdn-logs-danstutzman --force
+./aws-s3-cli rb s3://belugacdn-logs-danstutzman --force || true
 ./aws-s3-cli mb s3://belugacdn-logs-danstutzman
 mkdir -p fixtures
 gzip > fixtures/belugacdn-0ad34793-f0f5-4812-a202-9e0e7667973e.gz <<EOF
