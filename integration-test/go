@@ -26,7 +26,9 @@ EOF
 if [ ! -e fixtures/discovery.json ]; then
   curl https://www.googleapis.com/discovery/v1/apis/bigquery/v2/rest > fixtures/discovery.json
 fi
-$GOPATH/bin/fake-big-query -discovery-json-path=$PWD/fixtures/discovery.json &
+$GOPATH/bin/fake-big-query \
+  -discovery-json-path=$PWD/fixtures/discovery.json \
+  -port 9090 &
 FAKE_BIGQUERY_PID=$!
 
 # Setup InfluxDB
