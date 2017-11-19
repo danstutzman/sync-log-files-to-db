@@ -12,11 +12,11 @@ import (
 )
 
 var discoveryJson []byte
-var DATASETS_REGEXP = regexp.MustCompile("^/bigquery/v2/projects/(.*?)/datasets$")
-var TABLES_REGEXP = regexp.MustCompile("^/bigquery/v2/projects/(.*?)/datasets/(.*?)/tables$")
-var JOBS_REGEXP = regexp.MustCompile("^/bigquery/v2/projects/(.*?)/jobs$")
-var QUERY_REGEXP = regexp.MustCompile("^/bigquery/v2/projects/(.*?)/queries/(.*?)$")
-var INSERT_REGEXP = regexp.MustCompile("^/projects/(.*?)/datasets/(.*?)/tables/(.*?)/insertAll")
+var DATASETS_REGEXP = regexp.MustCompile("^(/bigquery/v2)?/projects/(.*?)/datasets$")
+var TABLES_REGEXP = regexp.MustCompile("^(/bigquery/v2)?/projects/(.*?)/datasets/(.*?)/tables$")
+var JOBS_REGEXP = regexp.MustCompile("^(/bigquery/v2)?/projects/(.*?)/jobs$")
+var QUERY_REGEXP = regexp.MustCompile("^(/bigquery/v2)?/projects/(.*?)/queries/(.*?)$")
+var INSERT_REGEXP = regexp.MustCompile("^(/bigquery/v2)?/projects/(.*?)/datasets/(.*?)/tables/(.*?)/insertAll")
 
 func serveDiscovery(w http.ResponseWriter, r *http.Request) {
 	w.Write(discoveryJson)
@@ -157,31 +157,31 @@ func serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if match := DATASETS_REGEXP.FindStringSubmatch(path); match != nil {
-		project := match[1]
+		project := match[2]
 		serveDatasets(w, r, project)
 		return
 	}
 	if match := TABLES_REGEXP.FindStringSubmatch(path); match != nil {
-		project := match[1]
-		dataset := match[2]
+		project := match[2]
+		dataset := match[3]
 		serveTables(w, r, project, dataset)
 		return
 	}
 	if match := JOBS_REGEXP.FindStringSubmatch(path); match != nil {
-		project := match[1]
+		project := match[2]
 		startJob(w, r, project)
 		return
 	}
 	if match := QUERY_REGEXP.FindStringSubmatch(path); match != nil {
-		project := match[1]
+		project := match[2]
 		serveQuery(w, r, project)
 		return
 	}
 
 	if match := INSERT_REGEXP.FindStringSubmatch(path); match != nil {
-		project := match[1]
-		dataset := match[2]
-		table := match[3]
+		project := match[2]
+		dataset := match[3]
+		table := match[4]
 		insertRows(w, r, project, dataset, table)
 		return
 	}
