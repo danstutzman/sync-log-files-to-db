@@ -129,15 +129,32 @@ func serveQuery(w http.ResponseWriter, r *http.Request, project string) {
 	}`, project)
 }
 
-func insertRows(w http.ResponseWriter, r *http.Request, project, dataset, table string) {
+func insertRows(w http.ResponseWriter, r *http.Request, projectName, datasetName, tableName string) {
 	decoder := json.NewDecoder(r.Body)
-	var body map[string]interface{}
-	err := decoder.Decode(&body)
+	var row map[string]interface{}
+	err := decoder.Decode(&row)
 	if err != nil {
 		panic(err)
 	}
 	defer r.Body.Close()
-	log.Println(body)
+
+	project, projectOk := projects[projectName]
+	if !projectOk {
+		project = Project{Datasets: map[string]Dataset{}}
+		projects[projectName] = project
+	}
+
+	dataset, datasetOk := project.Datasets[datasetName]
+	if !datasetOk {
+		log.Fatalf("Dataset doesn't exist: %s", datasetName)
+	}
+
+	table, tableOk := dataset.Tables[tableName]
+	if !tableOk {
+		log.Fatalf("Table doesn't exist: %s", tableName)
+	}
+
+	table.Rows = append(table.Rows, row)
 
 	// No errors implies success
 	fmt.Fprintf(w, `{
