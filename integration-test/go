@@ -43,7 +43,7 @@ docker exec influxdb-test influx -execute 'drop database mydb'
 $GOPATH/bin/sync-log-files-to-db config.json
 
 # Check output from fake BigQuery
-cat >fixtures/expected.json <<EOF
+cat >expected.json <<EOF
 [
   {
     "cache_status": "uncacheable",
@@ -89,22 +89,26 @@ cat >fixtures/expected.json <<EOF
   }
 ]
 EOF
-EXPECTED=`cat fixtures/expected.json`
-ACTUAL=`bq --api http://localhost:9090 query --format prettyjson 'select * from belugacdn_logs.visits'`
-if [ "$EXPECTED" != "$ACTUAL" ]; then
-  echo 1>&2 "Expected $EXPECTED but got $ACTUAL"
+bq --api http://localhost:9090 query --format prettyjson 'select * from belugacdn_logs.visits' > actual.json
+diff -u -w expected.json actual.json
+if [ "$?" != 0 ]; then
   exit 1
 fi
+rm -f expected.json actual.json
 
 # Check output from InfluxDB
-EXPECTED="key
+cat >expected.json <<EOF
+key
 ---
-belugacdn_logs,host=www.danstutzman.com" 
-ACTUAL=`docker exec influxdb-test influx -database mydb -execute 'show series'`
-if [ "$EXPECTED" != "$ACTUAL" ]; then
-  echo 1>&2 "Expected $EXPECTED but got $ACTUAL"
+belugacdn_logs,host=www.danstutzman.com
+EOF
+docker exec influxdb-test influx -database mydb -execute 'show series' \
+  > actual.json
+diff -u -w expected.json actual.json
+if [ "$?" != 0 ]; then
   exit 1
 fi
+rm -f expected.json actual.json
 
 kill $FAKE_BIGQUERY_PID
 echo 1>&2 "Success"

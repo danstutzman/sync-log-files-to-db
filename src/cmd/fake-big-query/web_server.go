@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strconv"
+	"time"
 )
 
 var discoveryJson []byte
@@ -14,6 +16,8 @@ var TABLES_REGEXP = regexp.MustCompile("^(/bigquery/v2)?/projects/(.*?)/datasets
 var JOBS_REGEXP = regexp.MustCompile("^(/bigquery/v2)?/projects/(.*?)/jobs$")
 var QUERY_REGEXP = regexp.MustCompile("^(/bigquery/v2)?/projects/(.*?)/queries/(.*?)$")
 var INSERT_REGEXP = regexp.MustCompile("^(/bigquery/v2)?/projects/(.*?)/datasets/(.*?)/tables/(.*?)/insertAll")
+var SELECT_COUNT_STAR_REGEXP = regexp.MustCompile(`(?i)^SELECT COUNT\(\*\) FROM ([^.]+).([^\s]+)$`)
+var SELECT_STAR_REGEXP = regexp.MustCompile(`(?i)^SELECT \* FROM ([^.]+).([^\s]+)( LIMIT ([0-9])+)?$`)
 
 type CreateDatasetRequest struct {
 	DatasetReference DatasetReference `json:"datasetReference"`
@@ -40,6 +44,15 @@ type Query1 struct {
 type JobReference struct {
 	ProjectId string `json:"projectId"`
 	JobId     string `json:"jobId"`
+}
+
+type InsertRowsRequest struct {
+	Rows []InsertRow `json:"rows"`
+}
+
+type InsertRow struct {
+	InsertId string                 `json:"insertId"`
+	Json     map[string]interface{} `json:"json"`
 }
 
 func serveDiscovery(w http.ResponseWriter, r *http.Request, discoveryJson []byte) {
@@ -133,11 +146,6 @@ type Schema struct {
 	Fields []Field `json:"fields"`
 }
 
-type Field struct {
-	Type string `json:"type"`
-	Name string `json:"name"`
-}
-
 func createTable(w http.ResponseWriter, r *http.Request, projectName, datasetName string) {
 	decoder := json.NewDecoder(r.Body)
 	var body CreateTableRequest
@@ -167,7 +175,9 @@ func createTable(w http.ResponseWriter, r *http.Request, projectName, datasetNam
 	if !datasetOk {
 		log.Fatalf("Dataset doesn't exist: %s", datasetName)
 	}
-	dataset.Tables[tableName] = Table{}
+	dataset.Tables[tableName] = Table{
+		Fields: body.Schema.Fields,
+	}
 
 	// Just serve the input as output
 	outputJson, err := json.Marshal(body)
@@ -178,7 +188,7 @@ func createTable(w http.ResponseWriter, r *http.Request, projectName, datasetNam
 
 }
 
-func createJob(w http.ResponseWriter, r *http.Request, project string) {
+func createJob(w http.ResponseWriter, r *http.Request, projectName string) {
 	decoder := json.NewDecoder(r.Body)
 	var body CreateJobRequest
 	err := decoder.Decode(&body)
@@ -188,8 +198,109 @@ func createJob(w http.ResponseWriter, r *http.Request, project string) {
 	defer r.Body.Close()
 
 	query := body.Configuration.Query1.Query2
+
+	var result Result
+	if match := SELECT_COUNT_STAR_REGEXP.FindStringSubmatch(query); match != nil {
+		datasetName := match[1]
+		tableName := match[2]
+
+		project, projectOk := projects[projectName]
+		if !projectOk {
+			log.Fatalf("Unknown project: %s", projectName)
+		}
+
+		dataset, datasetOk := project.Datasets[datasetName]
+		if !datasetOk {
+			log.Fatalf("Unknown dataset: %s", dataset)
+		}
+
+		table, tableOk := dataset.Tables[tableName]
+		if !tableOk {
+			log.Fatalf("Unknown table: %s", tableName)
+		}
+
+		numRows := len(table.Rows)
+		numRowsString := fmt.Sprintf("%d", numRows)
+		result = Result{
+			Fields: []Field{
+				Field{
+					Name: "f0_",
+					Type: "INTEGER",
+					Mode: "NULLABLE",
+				},
+			},
+			Rows: []ResultRow{
+				ResultRow{
+					Values: []ResultValue{
+						ResultValue{
+							Value: &numRowsString,
+						},
+					},
+				},
+			},
+		}
+
+	} else if match := SELECT_STAR_REGEXP.FindStringSubmatch(query); match != nil {
+		datasetName := match[1]
+		tableName := match[2]
+		limit := -1
+		if match[3] != "" {
+			limit, err = strconv.Atoi(match[4])
+			if err != nil {
+				log.Fatalf("Error from Atoi: %s", err)
+			}
+		}
+
+		project, projectOk := projects[projectName]
+		if !projectOk {
+			log.Fatalf("Unknown project: %s", projectName)
+		}
+
+		dataset, datasetOk := project.Datasets[datasetName]
+		if !datasetOk {
+			log.Fatalf("Unknown dataset: %s", dataset)
+		}
+
+		table, tableOk := dataset.Tables[tableName]
+		if !tableOk {
+			log.Fatalf("Unknown table: %s", tableName)
+		}
+
+		rows := table.Rows
+		if limit != -1 {
+			rows = table.Rows[0:limit]
+		}
+
+		result.Fields = table.Fields
+		for _, row := range rows {
+			resultValues := []ResultValue{}
+			for _, field := range table.Fields {
+				value := row[field.Name]
+
+				var resultValue ResultValue
+				if value != nil {
+					var valueString string
+					if valueFloat64, ok := value.(float64); ok {
+						valueString = strconv.FormatFloat(valueFloat64, 'f', -1, 64)
+					} else if field.Type == "TIMESTAMP" {
+						valueString = fmt.Sprintf("%d", value.(time.Time).Unix())
+					} else {
+						valueString = fmt.Sprintf("%s", value)
+					}
+					resultValue = ResultValue{Value: &valueString}
+				}
+
+				resultValues = append(resultValues, resultValue)
+			}
+			result.Rows = append(result.Rows, ResultRow{Values: resultValues})
+		}
+
+	} else {
+		log.Fatalf("Can't parse query: %s", query)
+	}
+
 	jobId := body.JobReference.JobId
-	queryByJobId[jobId] = query
+	queryResultByJobId[jobId] = result
 
 	email := "a@b.com"
 	fmt.Fprintf(w, `{
@@ -221,53 +332,49 @@ func createJob(w http.ResponseWriter, r *http.Request, project string) {
 		 "startTime": "1511049826072"
 		},
 		"user_email": "%s"
-	 }`, project, jobId,
-		project, jobId,
-		project, jobId,
+	 }`, projectName, jobId,
+		projectName, jobId,
+		projectName, jobId,
 		query,
-		project,
+		projectName,
 		email)
 }
 
-func serveQuery(w http.ResponseWriter, r *http.Request, project, jobId string) {
-	query := queryByJobId[jobId]
+func serveQuery(w http.ResponseWriter, r *http.Request, projectName, jobId string) {
+	fields := queryResultByJobId[jobId].Fields
+	fieldsJson, err := json.Marshal(fields)
+	if err != nil {
+		log.Fatalf("Error from Marshal: %s", err)
+	}
+
+	rows := queryResultByJobId[jobId].Rows
+	rowsJson, err := json.Marshal(rows)
+	if err != nil {
+		log.Fatalf("Error from Marshal: %s", err)
+	}
 
 	fmt.Fprintf(w, `{
 		"kind": "bigquery#getQueryResultsResponse",
 		"etag": "\"cX5UmbB_R-S07ii743IKGH9YCYM/wLFL5h11OCxiWY3yDLqREwltkXs\"",
 		"schema": {
-			"fields": [
-				{
-					"name": "f0_",
-					"type": "INTEGER",
-					"mode": "NULLABLE"
-				}
-			]
+			"fields": %s
 		},
 		"jobReference": {
 			"projectId": "%s",
 			"jobId": "%s"
 		},
 		"totalRows": "1",
-		"rows": [
-			{
-				"f": [
-					{
-						"v": "%s"
-					}
-				]
-			}
-		],
+		"rows": %s,
 		"totalBytesProcessed": "0",
 		"jobComplete": true,
 		"cacheHit": true
-	}`, project, jobId, query)
+	}`, fieldsJson, projectName, jobId, rowsJson)
 }
 
 func insertRows(w http.ResponseWriter, r *http.Request, projectName, datasetName, tableName string) {
 	decoder := json.NewDecoder(r.Body)
-	var row map[string]interface{}
-	err := decoder.Decode(&row)
+	var body InsertRowsRequest
+	err := decoder.Decode(&body)
 	if err != nil {
 		panic(err)
 	}
@@ -289,7 +396,24 @@ func insertRows(w http.ResponseWriter, r *http.Request, projectName, datasetName
 		log.Fatalf("Table doesn't exist: %s", tableName)
 	}
 
-	table.Rows = append(table.Rows, row)
+	for _, row := range body.Rows {
+		newRow := map[string]interface{}{}
+		for _, field := range table.Fields {
+			value := row.Json[field.Name]
+			if field.Type == "TIMESTAMP" {
+				parsedTime, err := time.Parse(time.RFC3339, value.(string))
+				if err != nil {
+					log.Fatalf("Can't parse time: %s", value)
+				}
+				newRow[field.Name] = parsedTime
+			} else {
+				newRow[field.Name] = row.Json[field.Name]
+			}
+		}
+
+		table.Rows = append(table.Rows, newRow)
+	}
+	dataset.Tables[tableName] = table
 
 	// No errors implies success
 	fmt.Fprintf(w, `{
