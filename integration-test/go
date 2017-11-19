@@ -39,6 +39,60 @@ docker exec influxdb-test influx -execute 'drop database mydb'
 # Actually run the test
 $GOPATH/bin/sync-log-files-to-db config.json
 
+# Check output from fake BigQuery
+cat >fixtures/expected.json <<EOF
+[
+  {
+    "cache_status": "uncacheable",
+    "duration": "0.004",
+    "geo_continent": "North America",
+    "geo_continent_code": "NA",
+    "geo_country": "United States",
+    "geo_country_code": "US",
+    "header_size": "396",
+    "host": "www.danstutzman.com",
+    "property_name": "",
+    "protocol": "HTTP/1.1",
+    "remote_addr": "77.88.47.63",
+    "request_method": "GET",
+    "response_size": "0",
+    "server_region": "Frankfurt",
+    "status": "302",
+    "time": "2017-11-18 18:12:51",
+    "trace": "2864d1d0-4c28-4b5d-9173-7baa15443198",
+    "uri": "/robots.txt",
+    "user_agent": "Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)"
+  },
+  {
+    "cache_status": "uncacheable",
+    "duration": "0.001",
+    "geo_continent": "Europe",
+    "geo_continent_code": "EU",
+    "geo_country": "Russia",
+    "geo_country_code": "RU",
+    "header_size": "386",
+    "host": "www.danstutzman.com",
+    "property_name": "",
+    "protocol": "HTTP/1.1",
+    "remote_addr": "93.158.161.136",
+    "request_method": "GET",
+    "response_size": "0",
+    "server_region": "Frankfurt",
+    "status": "302",
+    "time": "2017-11-18 18:12:55",
+    "trace": "50f1e7a9-dcdb-4b40-9450-2e38f708c825",
+    "uri": "/",
+    "user_agent": "Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)"
+  }
+]
+EOF
+EXPECTED=`cat fixtures/expected.json`
+ACTUAL=`bq --api http://localhost:9090 query --format prettyjson 'select * from belugacdn_logs.visits'`
+if [ "$EXPECTED" != "$ACTUAL" ]; then
+  echo 1>&2 "Expected $EXPECTED but got $ACTUAL"
+  exit 1
+fi
+
 # Check output from InfluxDB
 EXPECTED="key
 ---
