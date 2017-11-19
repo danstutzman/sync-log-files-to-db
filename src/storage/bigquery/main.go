@@ -161,7 +161,11 @@ func (conn *BigqueryConnection) InsertRows(
 		for _, m := range maps {
 			m2 := map[string]bigquery.JsonValue{}
 			for key, value := range m {
-				m2[key] = value
+				if key == "timestamp" {
+					m2["time"] = value // Match InfluxDB
+				} else {
+					m2[key] = value
+				}
 			}
 
 			row := &bigquery.TableDataInsertAllRequestRows{
