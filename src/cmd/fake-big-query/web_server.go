@@ -24,6 +24,24 @@ type DatasetReference struct {
 	ProjectId string `json:"projectId"`
 }
 
+type CreateJobRequest struct {
+	Configuration Configuration `json:"configuration"`
+	JobReference  JobReference  `json:"jobReference"`
+}
+
+type Configuration struct {
+	Query1 Query1 `json:"query"`
+}
+
+type Query1 struct {
+	Query2 string `json:"query"`
+}
+
+type JobReference struct {
+	ProjectId string `json:"projectId"`
+	JobId     string `json:"jobId"`
+}
+
 func serveDiscovery(w http.ResponseWriter, r *http.Request, discoveryJson []byte) {
 	w.Write(discoveryJson)
 }
@@ -160,22 +178,32 @@ func createTable(w http.ResponseWriter, r *http.Request, projectName, datasetNam
 
 }
 
-func startJob(w http.ResponseWriter, r *http.Request, project string) {
+func createJob(w http.ResponseWriter, r *http.Request, project string) {
+	decoder := json.NewDecoder(r.Body)
+	var body CreateJobRequest
+	err := decoder.Decode(&body)
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+
+	query := body.Configuration.Query1.Query2
+	jobId := body.JobReference.JobId
+	queryByJobId[jobId] = query
+
 	email := "a@b.com"
-	dataset := "belugacdn_logs"
-	table := "jobs"
 	fmt.Fprintf(w, `{
 		"kind": "bigquery#job",
 		"etag": "\"cX5UmbB_R-S07ii743IKGH9YCYM/_oiKSu1NLem_L8Icwp_IYkfy3vg\"",
-		"id": "%s:bqjob_r7c51234c0123569f_0000015fd1968828_1",
-		"selfLink": "https://www.googleapis.com/bigquery/v2/projects/%s/jobs/bqjob_r7c51234c0123569f_0000015fd1968828_1",
+		"id": "%s:%s",
+		"selfLink": "https://www.googleapis.com/bigquery/v2/projects/%s/jobs/%s",
 		"jobReference": {
 		 "projectId": "%s",
-		 "jobId": "bqjob_r7c51234c0123569f_0000015fd1968828_1"
+		 "jobId": "%s"
 		},
 		"configuration": {
 		 "query": {
-			"query": "select count(*) from %s.%s",
+			"query": "%s",
 			"destinationTable": {
 			 "projectId": "%s",
 			 "datasetId": "_2cf7cfaa9c05dd2381014b72df999b53fd45fe85",
@@ -193,10 +221,17 @@ func startJob(w http.ResponseWriter, r *http.Request, project string) {
 		 "startTime": "1511049826072"
 		},
 		"user_email": "%s"
-	 }`, project, project, project, dataset, table, project, email)
+	 }`, project, jobId,
+		project, jobId,
+		project, jobId,
+		query,
+		project,
+		email)
 }
 
-func serveQuery(w http.ResponseWriter, r *http.Request, project string) {
+func serveQuery(w http.ResponseWriter, r *http.Request, project, jobId string) {
+	query := queryByJobId[jobId]
+
 	fmt.Fprintf(w, `{
 		"kind": "bigquery#getQueryResultsResponse",
 		"etag": "\"cX5UmbB_R-S07ii743IKGH9YCYM/wLFL5h11OCxiWY3yDLqREwltkXs\"",
@@ -211,14 +246,14 @@ func serveQuery(w http.ResponseWriter, r *http.Request, project string) {
 		},
 		"jobReference": {
 			"projectId": "%s",
-			"jobId": "bqjob_r6c744039b40f818e_0000015fd19a3130_1"
+			"jobId": "%s"
 		},
 		"totalRows": "1",
 		"rows": [
 			{
 				"f": [
 					{
-						"v": "704"
+						"v": "%s"
 					}
 				]
 			}
@@ -226,8 +261,9 @@ func serveQuery(w http.ResponseWriter, r *http.Request, project string) {
 		"totalBytesProcessed": "0",
 		"jobComplete": true,
 		"cacheHit": true
-	}`, project)
+	}`, project, jobId, query)
 }
+
 func insertRows(w http.ResponseWriter, r *http.Request, projectName, datasetName, tableName string) {
 	decoder := json.NewDecoder(r.Body)
 	var row map[string]interface{}
@@ -288,10 +324,15 @@ func serve(w http.ResponseWriter, r *http.Request, discoveryJson []byte) {
 		}
 	} else if match := JOBS_REGEXP.FindStringSubmatch(path); match != nil {
 		project := match[2]
-		startJob(w, r, project)
+		if r.Method == "POST" {
+			createJob(w, r, project)
+		} else {
+			log.Fatalf("Unexpected method: %s", r.Method)
+		}
 	} else if match := QUERY_REGEXP.FindStringSubmatch(path); match != nil {
 		project := match[2]
-		serveQuery(w, r, project)
+		jobId := match[3]
+		serveQuery(w, r, project, jobId)
 	} else if match := INSERT_REGEXP.FindStringSubmatch(path); match != nil {
 		project := match[2]
 		dataset := match[3]

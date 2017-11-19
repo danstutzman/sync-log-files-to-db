@@ -13,3 +13,5 @@ type Project struct {
 }
 
 var projects = map[string]Project{}
+
+var queryByJobId = map[string]string{}
