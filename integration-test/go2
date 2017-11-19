@@ -7,6 +7,7 @@ fi
 $GOPATH/bin/fake-big-query -discovery-json-path=$PWD/fixtures/discovery.json &
 PID=$!
 
-bq --api http://localhost:9090 --apilog - ls
+bq --api http://localhost:9090 ls
+bq --api http://localhost:9090 query 'select count(*) from belugacdn_logs.visits'
 
 kill $PID
