@@ -152,8 +152,6 @@ func (conn *BigqueryConnection) CreateTable(tableName string,
 }
 
 func (conn *BigqueryConnection) InsertRows(tableName string,
-	createDataset func(),
-	createTable func(),
 	maps []map[string]interface{},
 	uniqueColumnName string) {
 
@@ -199,20 +197,6 @@ func (conn *BigqueryConnection) InsertRows(tableName string,
 	}, backoff.NewExponentialBackOff())
 
 	if err != nil {
-		if err.Error() == fmt.Sprintf(
-			"googleapi: Error 404: Not found: Dataset %s:%s, notFound",
-			conn.projectId, conn.datasetName) {
-
-			createDataset()
-			panic(fmt.Errorf("Created dataset; maybe wait before restarting"))
-		} else if err.Error() == fmt.Sprintf(
-			"googleapi: Error 404: Not found: Table %s:%s.%s, notFound",
-			conn.projectId, conn.datasetName, tableName) {
-
-			createTable()
-			panic(fmt.Errorf("Created table; maybe wait before restarting"))
-		} else {
-			panic(err)
-		}
+		panic(err)
 	}
 }

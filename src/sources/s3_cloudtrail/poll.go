@@ -49,11 +49,7 @@ func PollForever(opts *Options, configPath string) {
 
 		if len(events) > 0 {
 			if bigqueryConn != nil {
-				bigqueryConn.InsertRows("cloudtrail_events4",
-					func() { bigqueryConn.CreateDataset() },
-					func() { createEventsTable(bigqueryConn) },
-					events,
-					"eventID")
+				bigqueryConn.InsertRows("cloudtrail_events4", events, "eventID")
 			}
 			if influxdbConn != nil {
 				influxdbConn.InsertMaps(map[string]bool{}, events)

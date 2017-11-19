@@ -17,6 +17,8 @@ func PollForever(opts *Options, configPath string) {
 	var bigqueryConn *bigquery.BigqueryConnection
 	if opts.BigQuery != nil {
 		bigqueryConn = bigquery.NewBigqueryConnection(opts.BigQuery, configPath)
+		bigqueryConn.CreateDataset()
+		createVisitsTable(bigqueryConn)
 	}
 
 	var influxdbConn *influxdb.InfluxdbConnection
@@ -35,11 +37,7 @@ func PollForever(opts *Options, configPath string) {
 
 		if len(visits) > 0 {
 			if bigqueryConn != nil {
-				bigqueryConn.InsertRows("visits",
-					func() { bigqueryConn.CreateDataset() },
-					func() { createVisitsTable(bigqueryConn) },
-					visits,
-					"trace")
+				bigqueryConn.InsertRows("test", visits, "trace")
 			}
 			if influxdbConn != nil {
 				influxdbConn.InsertMaps(VISITS_TAG_SET, visits)
