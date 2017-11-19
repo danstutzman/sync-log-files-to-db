@@ -14,6 +14,12 @@
       "Port": "8086",
       "DatabaseName": "mydb",
       "MeasurementName": "belugacdn_logs"
+    },
+    "BigQuery": {
+      "GcloudPemPath": "n/a",
+      "GcloudProjectId": "speech-danstutzman",
+      "DatasetName": "belugacdn_logs",
+      "Endpoint": "http://localhost:9090"
     }
   }
 }

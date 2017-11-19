@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -107,16 +108,31 @@ func serveQuery(w http.ResponseWriter, r *http.Request) {
 		"totalRows": "1",
 		"rows": [
 			{
-			"f": [
-				{
-				"v": "704"
-				}
-			]
+				"f": [
+					{
+						"v": "704"
+					}
+				]
 			}
 		],
 		"totalBytesProcessed": "0",
 		"jobComplete": true,
 		"cacheHit": true
+	}`)
+}
+
+func insertRows(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+	var body map[string]interface{}
+	err := decoder.Decode(&body)
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+	log.Println(body)
+
+	fmt.Fprintf(w, `{
+		"kind": "bigquery#tableDataInsertAllResponse"
 	}`)
 }
 
@@ -131,6 +147,8 @@ func serve(w http.ResponseWriter, r *http.Request) {
 		startJob(w, r)
 	} else if r.URL.Path == "/bigquery/v2/projects/speech-danstutzman/queries/bqjob_r7c51234c0123569f_0000015fd1968828_1" {
 		serveQuery(w, r)
+	} else if r.URL.Path == "/projects/speech-danstutzman/datasets/belugacdn_logs/tables/visits/insertAll" {
+		insertRows(w, r)
 	} else {
 		log.Fatalf("Don't know how to serve path %s", r.URL.Path)
 	}

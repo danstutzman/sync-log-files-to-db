@@ -3,6 +3,7 @@ package bigquery
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"path"
 	"strconv"
 
@@ -41,21 +42,33 @@ func ParseFloat64(s string) float64 {
 }
 
 func NewBigqueryConnection(opts *Options, configPath string) *BigqueryConnection {
-	gcloudPemPath := path.Join(path.Dir(configPath), opts.GcloudPemPath)
-	pemKeyBytes, err := ioutil.ReadFile(gcloudPemPath)
-	if err != nil {
-		log.Fatalw("Error from ioutil.ReadFile", "err", err)
-	}
+	var service *bigquery.Service
+	var err error
+	if opts.Endpoint == "" {
+		gcloudPemPath := path.Join(path.Dir(configPath), opts.GcloudPemPath)
+		pemKeyBytes, err := ioutil.ReadFile(gcloudPemPath)
+		if err != nil {
+			log.Fatalw("Error from ioutil.ReadFile", "err", err)
+		}
 
-	token, err := google.JWTConfigFromJSON(pemKeyBytes, bigquery.BigqueryScope)
-	if err != nil {
-		log.Fatalw("Error from google.JWTConfigFromJSON", "err", err)
-	}
-	client := token.Client(oauth2.NoContext)
+		token, err := google.JWTConfigFromJSON(pemKeyBytes, bigquery.BigqueryScope)
+		if err != nil {
+			log.Fatalw("Error from google.JWTConfigFromJSON", "err", err)
+		}
+		client := token.Client(oauth2.NoContext)
 
-	service, err := bigquery.New(client)
-	if err != nil {
-		log.Fatalw("Error from bigquery.New", "err", err)
+		service, err = bigquery.New(client)
+		if err != nil {
+			log.Fatalw("Error from bigquery.New", "err", err)
+		}
+	} else {
+		client := &http.Client{}
+		service, err = bigquery.New(client)
+		if err != nil {
+			log.Fatalw("Error from bigquery.New", "err", err)
+		}
+		service.BasePath = opts.Endpoint
+		log.Infow("BasePath", "basePath", service.BasePath)
 	}
 
 	return &BigqueryConnection{
