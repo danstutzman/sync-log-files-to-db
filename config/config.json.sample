@@ -22,7 +22,8 @@
     "BigQuery": {
       "GcloudPemPath": "./Project-abc123.json",
       "GcloudProjectId": "ProjectIdHere",
-      "DatasetName": "belugacdn_logs"
+      "DatasetName": "belugacdn_logs",
+      "TableName": "visits"
     },
     "InfluxDb": {
       "Hostname": "127.0.0.1",

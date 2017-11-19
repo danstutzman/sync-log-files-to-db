@@ -20,8 +20,7 @@ func PollForever(opts *Options, configPath string) {
 	if opts.BigQuery != nil {
 		bigqueryConn = bigquery.NewBigqueryConnection(opts.BigQuery, configPath)
 		bigqueryConn.CreateDataset()
-		createEventsTable(bigqueryConn)
-		createDigestsTable(bigqueryConn)
+		createTable(bigqueryConn)
 	}
 
 	var influxdbConn *influxdb.InfluxdbConnection
@@ -49,7 +48,7 @@ func PollForever(opts *Options, configPath string) {
 
 		if len(events) > 0 {
 			if bigqueryConn != nil {
-				bigqueryConn.InsertRows("cloudtrail_events4", events, "eventID")
+				bigqueryConn.InsertRows(events, "eventID")
 			}
 			if influxdbConn != nil {
 				influxdbConn.InsertMaps(map[string]bool{}, events)
@@ -65,8 +64,8 @@ func PollForever(opts *Options, configPath string) {
 	}
 }
 
-func createEventsTable(bigqueryConn *bigquery.BigqueryConnection) {
-	bigqueryConn.CreateTable("cloudtrail_events4", []*googleBigquery.TableFieldSchema{
+func createTable(bigqueryConn *bigquery.BigqueryConnection) {
+	bigqueryConn.CreateTable([]*googleBigquery.TableFieldSchema{
 		{Name: "timestamp", Type: "TIMESTAMP", Mode: "REQUIRED"},
 		{Name: "eventType", Type: "STRING", Mode: "REQUIRED"},
 		{Name: "eventName", Type: "STRING", Mode: "REQUIRED"},
@@ -86,26 +85,5 @@ func createEventsTable(bigqueryConn *bigquery.BigqueryConnection) {
 		{Name: "userIdentityPrincipalId", Type: "STRING", Mode: "REQUIRED"},
 		{Name: "userIdentitySessionContextAttributes", Type: "STRING", Mode: "REQUIRED"},
 		{Name: "userIdentityAccessKeyId", Type: "STRING", Mode: "REQUIRED"},
-	})
-}
-
-func createDigestsTable(bigqueryConn *bigquery.BigqueryConnection) {
-	bigqueryConn.CreateTable("cloudtrail_digests", []*googleBigquery.TableFieldSchema{
-		{Name: "timestamp", Type: "TIMESTAMP", Mode: "REQUIRED"},
-		{Name: "awsAccountId", Type: "STRING", Mode: "REQUIRED"},
-		{Name: "digestStartTime", Type: "STRING", Mode: "REQUIRED"},
-		{Name: "digestEndTime", Type: "STRING", Mode: "REQUIRED"},
-		{Name: "digestS3Bucket", Type: "STRING", Mode: "REQUIRED"},
-		{Name: "digestS3Object", Type: "STRING", Mode: "REQUIRED"},
-		{Name: "digestPublicKeyFingerprint", Type: "STRING", Mode: "REQUIRED"},
-		{Name: "digestSignatureAlgorithm", Type: "STRING", Mode: "REQUIRED"},
-		{Name: "newestEventTime", Type: "STRING", Mode: "REQUIRED"},
-		{Name: "oldestEventTime", Type: "STRING", Mode: "REQUIRED"},
-		{Name: "previousDigestS3Bucket", Type: "STRING", Mode: "REQUIRED"},
-		{Name: "previousDigestS3Object", Type: "STRING", Mode: "REQUIRED"},
-		{Name: "previousDigestHashValue", Type: "STRING", Mode: "REQUIRED"},
-		{Name: "previousDigestHashAlgorithm", Type: "STRING", Mode: "REQUIRED"},
-		{Name: "previousDigestSignature", Type: "STRING", Mode: "REQUIRED"},
-		{Name: "LogFiles", Type: "STRING", Mode: "REQUIRED"},
 	})
 }

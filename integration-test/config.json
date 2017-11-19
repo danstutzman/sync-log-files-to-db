@@ -19,6 +19,7 @@
       "GcloudPemPath": "n/a",
       "GcloudProjectId": "speech-danstutzman",
       "DatasetName": "belugacdn_logs",
+      "TableName": "visits",
       "Endpoint": "http://localhost:9090"
     }
   }

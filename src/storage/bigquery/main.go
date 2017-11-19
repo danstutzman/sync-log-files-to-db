@@ -18,6 +18,7 @@ import (
 type BigqueryConnection struct {
 	projectId   string
 	datasetName string
+	tableName   string
 	service     *bigquery.Service
 }
 
@@ -74,6 +75,7 @@ func NewBigqueryConnection(opts *Options, configPath string) *BigqueryConnection
 	return &BigqueryConnection{
 		projectId:   opts.GcloudProjectId,
 		datasetName: opts.DatasetName,
+		tableName:   opts.TableName,
 		service:     service,
 	}
 }
@@ -126,24 +128,23 @@ func (conn *BigqueryConnection) CreateDataset() {
 	}
 }
 
-func (conn *BigqueryConnection) CreateTable(tableName string,
-	fields []*bigquery.TableFieldSchema) {
+func (conn *BigqueryConnection) CreateTable(fields []*bigquery.TableFieldSchema) {
 
-	log.Infow("Creating table...", "tableName", tableName)
+	log.Infow("Creating table...", "tableName", conn.tableName)
 	_, err := conn.service.Tables.Insert(conn.projectId, conn.datasetName,
 		&bigquery.Table{
 			Schema: &bigquery.TableSchema{Fields: fields},
 			TableReference: &bigquery.TableReference{
 				DatasetId: conn.datasetName,
 				ProjectId: conn.projectId,
-				TableId:   tableName,
+				TableId:   conn.tableName,
 			},
 		}).Do()
 
 	if err != nil {
 		if err.Error() == fmt.Sprintf(
 			"googleapi: Error 409: Already Exists: Table %s:%s.%s, duplicate",
-			conn.projectId, conn.datasetName, tableName) {
+			conn.projectId, conn.datasetName, conn.tableName) {
 			// Ignore error
 		} else {
 			panic(err)
@@ -151,9 +152,8 @@ func (conn *BigqueryConnection) CreateTable(tableName string,
 	}
 }
 
-func (conn *BigqueryConnection) InsertRows(tableName string,
-	maps []map[string]interface{},
-	uniqueColumnName string) {
+func (conn *BigqueryConnection) InsertRows(
+	maps []map[string]interface{}, uniqueColumnName string) {
 
 	var err error
 	err = backoff.Retry(func() error {
@@ -171,9 +171,10 @@ func (conn *BigqueryConnection) InsertRows(tableName string,
 			rows = append(rows, row)
 		}
 
-		log.Infow("Inserting rows...", "tableName", tableName)
-		result, err := conn.service.Tabledata.InsertAll(conn.projectId, conn.datasetName,
-			tableName, &bigquery.TableDataInsertAllRequest{Rows: rows}).Do()
+		log.Infow("Inserting rows...", "tableName", conn.tableName)
+		result, err := conn.service.Tabledata.InsertAll(
+			conn.projectId, conn.datasetName, conn.tableName,
+			&bigquery.TableDataInsertAllRequest{Rows: rows}).Do()
 		if err != nil {
 			err2, isGoogleApiError := err.(*googleapi.Error)
 			if isGoogleApiError && (err2.Code == 500 || err2.Code == 503) {

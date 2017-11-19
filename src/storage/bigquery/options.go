@@ -8,6 +8,7 @@ type Options struct {
 	GcloudPemPath   string
 	GcloudProjectId string
 	DatasetName     string
+	TableName       string
 	Endpoint        string
 }
 
@@ -20,5 +21,8 @@ func ValidateOptions(options *Options) {
 	}
 	if options.DatasetName == "" {
 		log.Fatalw("Missing Bigquery.DatasetName")
+	}
+	if options.TableName == "" {
+		log.Fatalw("Missing Bigquery.TableName")
 	}
 }
