@@ -26,6 +26,7 @@ EOF
 if [ ! -e fixtures/discovery.json ]; then
   curl https://www.googleapis.com/discovery/v1/apis/bigquery/v2/rest > fixtures/discovery.json
 fi
+lsof -i :9090 && { echo 1>&2 "fake-big-query is already running"; exit 1; }
 $GOPATH/bin/fake-big-query \
   -discovery-json-path=$PWD/fixtures/discovery.json \
   -port 9090 &

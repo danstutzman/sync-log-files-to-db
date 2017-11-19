@@ -15,11 +15,20 @@ var JOBS_REGEXP = regexp.MustCompile("^(/bigquery/v2)?/projects/(.*?)/jobs$")
 var QUERY_REGEXP = regexp.MustCompile("^(/bigquery/v2)?/projects/(.*?)/queries/(.*?)$")
 var INSERT_REGEXP = regexp.MustCompile("^(/bigquery/v2)?/projects/(.*?)/datasets/(.*?)/tables/(.*?)/insertAll")
 
+type CreateDatasetRequest struct {
+	DatasetReference DatasetReference `json:"datasetReference"`
+}
+
+type DatasetReference struct {
+	DatasetId string `json:"datasetId"`
+	ProjectId string `json:"projectId"`
+}
+
 func serveDiscovery(w http.ResponseWriter, r *http.Request, discoveryJson []byte) {
 	w.Write(discoveryJson)
 }
 
-func serveDatasets(w http.ResponseWriter, r *http.Request, project string) {
+func listDatasets(w http.ResponseWriter, r *http.Request, project string) {
 	dataset := "belugacdn_logs"
 	fmt.Fprintf(w, `{
 		"kind": "bigquery#datasetList",
@@ -37,7 +46,38 @@ func serveDatasets(w http.ResponseWriter, r *http.Request, project string) {
 	 }`, project, dataset, dataset, project)
 }
 
-func serveTables(w http.ResponseWriter, r *http.Request, project, dataset string) {
+func createDataset(w http.ResponseWriter, r *http.Request, projectName string) {
+	decoder := json.NewDecoder(r.Body)
+	var body CreateDatasetRequest
+	err := decoder.Decode(&body)
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+
+	projectName2 := body.DatasetReference.ProjectId
+	if projectName2 != projectName {
+		log.Fatalf("Expected project name to match")
+	}
+	datasetName := body.DatasetReference.DatasetId
+
+	project, projectOk := projects[projectName]
+	if !projectOk {
+		project = Project{Datasets: map[string]Dataset{}}
+		projects[projectName] = project
+	}
+
+	project.Datasets[datasetName] = Dataset{Tables: map[string]Table{}}
+
+	// Just serve the input as output
+	outputJson, err := json.Marshal(body)
+	if err != nil {
+		log.Fatalf("Error from Marshal: %v", err)
+	}
+	w.Write(outputJson)
+}
+
+func listTables(w http.ResponseWriter, r *http.Request, project, dataset string) {
 	table := "visits"
 	fmt.Fprintf(w, `{
 		"kind": "bigquery#tableList",
@@ -58,6 +98,66 @@ func serveTables(w http.ResponseWriter, r *http.Request, project, dataset string
 		"totalItems": 1
 		}
 	`, project, dataset, table, project, dataset, table)
+}
+
+type CreateTableRequest struct {
+	TableReference TableReference `json:"tableReference"`
+	Schema         Schema         `json:"schema"`
+}
+
+type TableReference struct {
+	ProjectId string `json:"projectId"`
+	DatasetId string `json:"datasetId"`
+	TableId   string `json:"tableId"`
+}
+
+type Schema struct {
+	Fields []Field `json:"fields"`
+}
+
+type Field struct {
+	Type string `json:"type"`
+	Name string `json:"name"`
+}
+
+func createTable(w http.ResponseWriter, r *http.Request, projectName, datasetName string) {
+	decoder := json.NewDecoder(r.Body)
+	var body CreateTableRequest
+	err := decoder.Decode(&body)
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+
+	projectName2 := body.TableReference.ProjectId
+	if projectName2 != projectName {
+		log.Fatalf("Expected project name to match")
+	}
+	datasetName2 := body.TableReference.DatasetId
+	if datasetName2 != datasetName {
+		log.Fatalf("Expected dataset name to match")
+	}
+	tableName := body.TableReference.TableId
+
+	project, projectOk := projects[projectName]
+	if !projectOk {
+		project = Project{Datasets: map[string]Dataset{}}
+		projects[projectName] = project
+	}
+
+	dataset, datasetOk := project.Datasets[datasetName]
+	if !datasetOk {
+		log.Fatalf("Dataset doesn't exist: %s", datasetName)
+	}
+	dataset.Tables[tableName] = Table{}
+
+	// Just serve the input as output
+	outputJson, err := json.Marshal(body)
+	if err != nil {
+		log.Fatalf("Error from Marshal: %v", err)
+	}
+	w.Write(outputJson)
+
 }
 
 func startJob(w http.ResponseWriter, r *http.Request, project string) {
@@ -128,7 +228,6 @@ func serveQuery(w http.ResponseWriter, r *http.Request, project string) {
 		"cacheHit": true
 	}`, project)
 }
-
 func insertRows(w http.ResponseWriter, r *http.Request, projectName, datasetName, tableName string) {
 	decoder := json.NewDecoder(r.Body)
 	var row map[string]interface{}
@@ -168,39 +267,39 @@ func serve(w http.ResponseWriter, r *http.Request, discoveryJson []byte) {
 
 	if path == "/discovery/v1/apis/bigquery/v2/rest" {
 		serveDiscovery(w, r, discoveryJson)
-		return
-	}
-	if match := DATASETS_REGEXP.FindStringSubmatch(path); match != nil {
+	} else if match := DATASETS_REGEXP.FindStringSubmatch(path); match != nil {
 		project := match[2]
-		serveDatasets(w, r, project)
-		return
-	}
-	if match := TABLES_REGEXP.FindStringSubmatch(path); match != nil {
+		if r.Method == "GET" {
+			listDatasets(w, r, project)
+		} else if r.Method == "POST" {
+			createDataset(w, r, project)
+		} else {
+			log.Fatalf("Unexpected method: %s", r.Method)
+		}
+	} else if match := TABLES_REGEXP.FindStringSubmatch(path); match != nil {
 		project := match[2]
 		dataset := match[3]
-		serveTables(w, r, project, dataset)
-		return
-	}
-	if match := JOBS_REGEXP.FindStringSubmatch(path); match != nil {
+		if r.Method == "GET" {
+			listTables(w, r, project, dataset)
+		} else if r.Method == "POST" {
+			createTable(w, r, project, dataset)
+		} else {
+			log.Fatalf("Unexpected method: %s", r.Method)
+		}
+	} else if match := JOBS_REGEXP.FindStringSubmatch(path); match != nil {
 		project := match[2]
 		startJob(w, r, project)
-		return
-	}
-	if match := QUERY_REGEXP.FindStringSubmatch(path); match != nil {
+	} else if match := QUERY_REGEXP.FindStringSubmatch(path); match != nil {
 		project := match[2]
 		serveQuery(w, r, project)
-		return
-	}
-
-	if match := INSERT_REGEXP.FindStringSubmatch(path); match != nil {
+	} else if match := INSERT_REGEXP.FindStringSubmatch(path); match != nil {
 		project := match[2]
 		dataset := match[3]
 		table := match[4]
 		insertRows(w, r, project, dataset, table)
-		return
+	} else {
+		log.Fatalf("Don't know how to serve path %s", r.URL.Path)
 	}
-
-	log.Fatalf("Don't know how to serve path %s", r.URL.Path)
 }
 
 func listenAndServe(discoveryJson []byte, portNum int) {

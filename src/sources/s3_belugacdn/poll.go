@@ -37,7 +37,7 @@ func PollForever(opts *Options, configPath string) {
 
 		if len(visits) > 0 {
 			if bigqueryConn != nil {
-				bigqueryConn.InsertRows("test", visits, "trace")
+				bigqueryConn.InsertRows("visits", visits, "trace")
 			}
 			if influxdbConn != nil {
 				influxdbConn.InsertMaps(VISITS_TAG_SET, visits)
