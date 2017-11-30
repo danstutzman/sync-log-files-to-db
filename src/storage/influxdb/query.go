@@ -10,11 +10,21 @@ import (
 	clientPkg "github.com/influxdata/influxdb/client/v2"
 )
 
-func (conn *InfluxdbConnection) QueryForLastTimestamp(containerId string) time.Time {
+func (conn *InfluxdbConnection) QueryForLastTimestampForTag(tagName, tagValue string) time.Time {
 	command := fmt.Sprintf(
-		"SELECT LAST(message) FROM %s WHERE container_id = '%s'",
+		"SELECT LAST(message) FROM %s WHERE %s = '%s'",
 		conn.measurementName,
-		strings.Replace(containerId, "\"", "\\\"", -1))
+		tagName,
+		strings.Replace(tagValue, "\"", "\\\"", -1))
+	return conn.queryForLastTimestamp(command)
+}
+
+func (conn *InfluxdbConnection) QueryForLastTimestamp() time.Time {
+	command := fmt.Sprintf("SELECT LAST(message) FROM %s", conn.measurementName)
+	return conn.queryForLastTimestamp(command)
+}
+
+func (conn *InfluxdbConnection) queryForLastTimestamp(command string) time.Time {
 
 	results, err := conn.query(command)
 	if err != nil {

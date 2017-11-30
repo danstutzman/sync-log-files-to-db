@@ -12,6 +12,7 @@ import (
 	"github.com/danielstutzman/sync-log-files-to-db/src/sources/redis"
 	"github.com/danielstutzman/sync-log-files-to-db/src/sources/s3_belugacdn"
 	"github.com/danielstutzman/sync-log-files-to-db/src/sources/s3_cloudtrail"
+	"github.com/danielstutzman/sync-log-files-to-db/src/sources/systemd"
 )
 
 type Config struct {
@@ -19,6 +20,7 @@ type Config struct {
 	WatchDockerJsonFiles              *docker.Options
 	WatchS3BelugaCDN                  *s3_belugacdn.Options
 	WatchS3CloudTrail                 *s3_cloudtrail.Options
+	WatchSystemdLogs                  *systemd.Options
 }
 
 func readConfig() (*Config, string) {
@@ -78,6 +80,15 @@ func main() {
 		go func() {
 			defer wg.Done()
 			s3_cloudtrail.PollForever(config.WatchS3CloudTrail, configPath)
+		}()
+	}
+	if config.WatchSystemdLogs != nil {
+		systemd.ValidateOptions(config.WatchSystemdLogs)
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			systemd.StartTailingSystemdLogs(config.WatchSystemdLogs, configPath)
 		}()
 	}
 
