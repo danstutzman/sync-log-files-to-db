@@ -42,6 +42,13 @@
 			"tree": true
 		},
 		{
+			"checksumSHA1": "heOzHsK8A9XL12ljKAv6oPYnLa0=",
+			"path": "github.com/danielstutzman/go-monitis",
+			"revision": "f5d7ad4af60bee1dbae62b94c40fd2f4d56d7278",
+			"revisionTime": "2017-12-02T18:37:41Z",
+			"tree": true
+		},
+		{
 			"checksumSHA1": "dvabztWVQX8f6oMLRyv4dLH+TGY=",
 			"path": "github.com/davecgh/go-spew/spew",
 			"revision": "346938d642f2ec3594ed81d874461961cd0faa76",
