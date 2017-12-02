@@ -32,14 +32,14 @@ func (conn *InfluxdbConnection) queryForLastTimestamp(command string) time.Time 
 	}
 
 	if len(results) == 0 {
-		return time.Unix(0, 0)
+		return time.Time{} // zero value
 	} else if len(results) > 1 {
 		log.Fatalw("Expected one or zero results", "got", len(results))
 	}
 
 	if len(results[0].Series) == 0 {
 		// No rows so return earliest possible time
-		return time.Unix(0, 0)
+		return time.Time{} // zero value
 	} else if len(results[0].Series) > 1 {
 		log.Fatalw("Expected one or zero for len(Series)", "got", len(results[0].Series))
 	}
@@ -60,7 +60,7 @@ func (conn *InfluxdbConnection) queryForLastTimestamp(command string) time.Time 
 		}
 	}
 	log.Fatalw("Couldn't find time column in query result", "results", results)
-	return time.Unix(0, 0).UTC() // this line is never reached
+	return time.Time{} // zero value; this line is never reached
 }
 
 func (conn *InfluxdbConnection) query(command string) (result []clientPkg.Result, err error) {
