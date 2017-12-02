@@ -1,3 +1,5 @@
+[![GoDoc](https://godoc.org/github.com/danielstutzman/sync-log-files-to-db?status.svg)](https://godoc.org/github.com/danielstutzman/sync-log-files-to-db/src/cmd/sync-log-files-to-db?imports)
+
 # Sync Structured Log Files to a Time-series Database
 
 ## Purpose
