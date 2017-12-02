@@ -2,8 +2,8 @@ package systemd
 
 import (
 	"github.com/danielstutzman/sync-log-files-to-db/src/log"
-	"github.com/danielstutzman/sync-log-files-to-db/src/storage/bigquery"
-	"github.com/danielstutzman/sync-log-files-to-db/src/storage/influxdb"
+	"github.com/danielstutzman/sync-log-files-to-db/src/writers/bigquery"
+	"github.com/danielstutzman/sync-log-files-to-db/src/writers/influxdb"
 )
 
 type Options struct {

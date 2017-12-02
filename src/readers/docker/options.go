@@ -2,7 +2,7 @@ package docker
 
 import (
 	"github.com/danielstutzman/sync-log-files-to-db/src/log"
-	"github.com/danielstutzman/sync-log-files-to-db/src/storage/influxdb"
+	"github.com/danielstutzman/sync-log-files-to-db/src/writers/influxdb"
 )
 
 const DEFAULT_SECONDS_BETWEEN_POLL_FOR_NEW_CONTAINERS = 60

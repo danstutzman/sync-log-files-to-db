@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/danielstutzman/sync-log-files-to-db/src/log"
-	"github.com/danielstutzman/sync-log-files-to-db/src/storage/influxdb"
+	"github.com/danielstutzman/sync-log-files-to-db/src/writers/influxdb"
 	"github.com/docker/docker/api/types"
 	"github.com/moby/moby/client"
 )

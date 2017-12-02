@@ -3,8 +3,8 @@ package s3_cloudtrail
 import (
 	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 	"github.com/danielstutzman/sync-log-files-to-db/src/readers/s3"
-	"github.com/danielstutzman/sync-log-files-to-db/src/storage/bigquery"
-	"github.com/danielstutzman/sync-log-files-to-db/src/storage/influxdb"
+	"github.com/danielstutzman/sync-log-files-to-db/src/writers/bigquery"
+	"github.com/danielstutzman/sync-log-files-to-db/src/writers/influxdb"
 )
 
 const DEFAULT_PATHS_PER_BATCH = 100

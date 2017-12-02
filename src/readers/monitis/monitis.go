@@ -7,7 +7,7 @@ import (
 
 	"github.com/danielstutzman/go-monitis"
 	"github.com/danielstutzman/sync-log-files-to-db/src/log"
-	"github.com/danielstutzman/sync-log-files-to-db/src/storage/influxdb"
+	"github.com/danielstutzman/sync-log-files-to-db/src/writers/influxdb"
 )
 
 var INFLUXDB_TAGS_SET = map[string]bool{

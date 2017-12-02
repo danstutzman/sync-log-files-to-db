@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/danielstutzman/sync-log-files-to-db/src/log"
-	bigquery "github.com/danielstutzman/sync-log-files-to-db/src/storage/bigquery"
+	bigquery "github.com/danielstutzman/sync-log-files-to-db/src/writers/bigquery"
 	googleBigqueryPkg "google.golang.org/api/bigquery/v2"
 )
 
