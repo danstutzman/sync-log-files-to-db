@@ -1,15 +1,17 @@
 #!/bin/bash -ex
 
 USERNAME=root
-HOSTNAME=build.danstutzman.com
+HOSTNAME=207.246.91.97
 TARGET_PATH=/root/gopath/src/github.com/danielstutzman/sync-log-files-to-db/
 SSH_KEY=/Users/dan/.ssh/vultr
+
+ssh -i $SSH_KEY $USERNAME@$HOSTNAME "cd $TARGET_PATH && git config user.email dtstutz@gmail.com && git config user.name 'Dan Stutzman' && git reset --hard && git clean -f -d && GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git pull origin master"
 
 git status --porcelain --ignored \
   | sed 's/^.. //' \
   | xargs -J {} \
-    rsync -r --rsh="ssh -i $SSH_KEY" \
-     --exclude=backed_up -z \
+    rsync -r --rsh="ssh -i $SSH_KEY" -v \
+     --exclude=backed_up --exclude=.git -z --delete \
      --no-owner --force --relative --delete-missing-args \
       .git/ {} $USERNAME@$HOSTNAME:$TARGET_PATH || \
   if [ "$?" != 0 ]; then
@@ -43,25 +45,4 @@ ssh -i $SSH_KEY $USERNAME@$HOSTNAME <<EOF
 
   ldd /root/gopath/bin/sync-log-files-to-db | grep -q "not a dynamic executable"
   git diff
-
-  docker ps -a -f ancestor=sync-log-files-to-db --format={{.ID}} \
-      | xargs --no-run-if-empty docker stop
-  sleep 0.5
-  docker ps -a -f ancestor=sync-log-files-to-db --format={{.ID}} \
-      | xargs --no-run-if-empty docker rm
-  docker image ls sync-log-files-to-db | grep -q latest && \
-      docker rmi sync-log-files-to-db
-  cp /root/gopath/bin/sync-log-files-to-db $TARGET_PATH/sync-log-files-to-db
-  docker build $TARGET_PATH -t sync-log-files-to-db
-
-	# If nothing is listening on port 8086, start sync-log-files-to-db on port 8086
-	lsof -i :6380 || docker run -d \
-		--name=sync-log-files-to-db \
-		-p 6380:6380 \
-		-v /usr/share/ca-certificates:/etc/ssl/certs:ro \
-		-v /root/gopath/src/github.com/danielstutzman/sync-log-files-to-db/config:/root/config:ro \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v /var/lib/docker:/var/lib/docker:ro \
-		--restart unless-stopped \
-		sync-log-files-to-db /root/sync-log-files-to-db /root/config/config.json.prod
 EOF
