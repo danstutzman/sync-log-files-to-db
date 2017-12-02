@@ -64,17 +64,20 @@ func (conn *InfluxdbConnection) queryForLastTimestamp(command string) time.Time 
 }
 
 func (conn *InfluxdbConnection) query(command string) (result []clientPkg.Result, err error) {
-
 	q := clientPkg.Query{
 		Command:   command,
 		Database:  conn.databaseName,
 		Precision: "ns",
 	}
-	if response, err := conn.client.Query(q); err == nil {
-		if response.Error() != nil {
-			return []clientPkg.Result{}, response.Error()
-		}
-		return response.Results, nil
+
+	response, err := conn.client.Query(q)
+	if err != nil {
+		return []clientPkg.Result{}, err
 	}
-	return []clientPkg.Result{}, nil
+
+	if response.Error() != nil {
+		return []clientPkg.Result{}, response.Error()
+	}
+
+	return response.Results, nil
 }
