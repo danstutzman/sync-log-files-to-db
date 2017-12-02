@@ -1,5 +1,5 @@
 {
-  "WatchDockerJsonFiles": {
+  "TailDockerJsonFiles": {
     "SecondsBetweenPollForNewContainers": 10,
     "InfluxDb": {
       "Hostname": "127.0.0.1",
@@ -10,7 +10,7 @@
       "MeasurementName": "logs"
     }
   },
-  "WatchS3BelugaCDN": {
+  "PollS3BelugaCDN": {
     "S3": {
       "CredsPath": "./s3.creds.ini",
       "Region": "us-east-1",

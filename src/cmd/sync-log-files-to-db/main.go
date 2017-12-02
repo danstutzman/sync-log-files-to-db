@@ -18,10 +18,10 @@ import (
 
 type Config struct {
 	ListenOnFakeRedisForBelugaCDNLogs *redis.Options
-	WatchDockerJsonFiles              *docker.Options
-	WatchS3BelugaCDN                  *s3_belugacdn.Options
-	WatchS3CloudTrail                 *s3_cloudtrail.Options
-	WatchSystemdLogs                  *systemd.Options
+	TailDockerJsonFiles               *docker.Options
+	PollS3BelugaCDN                   *s3_belugacdn.Options
+	PollS3CloudTrail                  *s3_cloudtrail.Options
+	TailSystemdLogs                   *systemd.Options
 	PollMonitisResults                *monitis.Options
 }
 
@@ -57,40 +57,40 @@ func main() {
 			redis.ListenForever(config.ListenOnFakeRedisForBelugaCDNLogs, configPath)
 		}()
 	}
-	if config.WatchDockerJsonFiles != nil {
-		docker.ValidateOptions(config.WatchDockerJsonFiles)
+	if config.TailDockerJsonFiles != nil {
+		docker.ValidateOptions(config.TailDockerJsonFiles)
 
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			docker.TailDockerLogsForever(config.WatchDockerJsonFiles, configPath)
+			docker.TailDockerLogsForever(config.TailDockerJsonFiles, configPath)
 		}()
 	}
-	if config.WatchS3BelugaCDN != nil {
-		s3_belugacdn.ValidateOptions(config.WatchS3BelugaCDN)
+	if config.PollS3BelugaCDN != nil {
+		s3_belugacdn.ValidateOptions(config.PollS3BelugaCDN)
 
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			s3_belugacdn.PollForever(config.WatchS3BelugaCDN, configPath)
+			s3_belugacdn.PollForever(config.PollS3BelugaCDN, configPath)
 		}()
 	}
-	if config.WatchS3CloudTrail != nil {
-		s3_cloudtrail.ValidateOptions(config.WatchS3CloudTrail)
+	if config.PollS3CloudTrail != nil {
+		s3_cloudtrail.ValidateOptions(config.PollS3CloudTrail)
 
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			s3_cloudtrail.PollForever(config.WatchS3CloudTrail, configPath)
+			s3_cloudtrail.PollForever(config.PollS3CloudTrail, configPath)
 		}()
 	}
-	if config.WatchSystemdLogs != nil {
-		systemd.ValidateOptions(config.WatchSystemdLogs)
+	if config.TailSystemdLogs != nil {
+		systemd.ValidateOptions(config.TailSystemdLogs)
 
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			systemd.StartTailingSystemdLogs(config.WatchSystemdLogs, configPath)
+			systemd.StartTailingSystemdLogs(config.TailSystemdLogs, configPath)
 		}()
 	}
 	if config.PollMonitisResults != nil {
