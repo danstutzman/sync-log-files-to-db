@@ -45,6 +45,19 @@ func PollMonitisForever(config *Options, configPath string) {
 func pollMonitisMonitorForever(monitor *monitis.ExternalMonitor,
 	auth *monitis.Auth, influxdbConn *influxdb.InfluxdbConnection) {
 
+	retrieveDate := midnightBefore(influxdbConn.QueryForLastTimestampForTag("monitor_name", monitor.Name))
+	log.Infow("Most recent timestamp", "timestamp", retrieveDate, "monitor_name", monitor.Name)
+	if retrieveDate.IsZero() {
+		// Since there's no existing data in InfluxDB,
+		// find out the monitor's start date and start scraping from then
+		info, err := auth.GetExternalMonitorInfo(strconv.Itoa(monitor.Id), nil)
+		if err != nil {
+			log.Fatalw("Error from GetExternalMonitorInfo",
+				"err", err, "monitor_name", monitor.Name)
+		}
+		retrieveDate = info.StartDateParsed
+	}
+
 	minIntervalMinutes := 9999
 	for _, intervalString := range strings.Split(monitor.Intervals, ",") {
 		interval, err := strconv.Atoi(intervalString)
@@ -57,7 +70,15 @@ func pollMonitisMonitorForever(monitor *monitis.ExternalMonitor,
 	}
 
 	for {
-		results, err := auth.GetExternalResults(strconv.Itoa(monitor.Id))
+		log.Infow("Calling GetExternalResults...",
+			"date", retrieveDate.Format("2006-01-02"),
+			"monitor_name", monitor.Name)
+		results, err := auth.GetExternalResults(strconv.Itoa(monitor.Id),
+			&monitis.GetExternalResultsOptions{
+				Year:  monitis.Int(retrieveDate.Year()),
+				Month: monitis.Int(int(retrieveDate.Month())),
+				Day:   monitis.Int(retrieveDate.Day()),
+			})
 		if err != nil {
 			log.Fatalw("Error from GetExternalResults",
 				"err", err, "monitor_name", monitor.Name)
@@ -81,7 +102,19 @@ func pollMonitisMonitorForever(monitor *monitis.ExternalMonitor,
 			influxdbConn.InsertMaps(INFLUXDB_TAGS_SET, maps)
 		}
 
-		log.Infow("Wait until next point posted", "minutes", minIntervalMinutes)
-		time.Sleep(time.Duration(minIntervalMinutes) * time.Minute)
+		if retrieveDate.Before(midnightBefore(time.Now().UTC())) {
+			retrieveDate = retrieveDate.AddDate(0, 0, 1)
+
+			// Throttle API a little
+			time.Sleep(time.Second)
+		} else {
+			log.Infow("Wait until next point posted", "minutes", minIntervalMinutes)
+			time.Sleep(time.Duration(minIntervalMinutes) * time.Minute)
+		}
 	}
+}
+
+// Rounds time down to the day
+func midnightBefore(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 }
