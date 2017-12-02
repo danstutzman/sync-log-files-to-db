@@ -8,6 +8,87 @@ To synchronize log data to a single database, either:
 
 ## Data sources
 
+### Tail Docker Container Logs (using `json-file` driver)
+
+Docker saves its container's output using the logging driver you specify.  The default option is [JSON file logging](https://docs.docker.com/engine/admin/logging/json-file/).  Each line of stdout or stderr from your docker container is appended as a JSON object including a timestamp.
+
+How to set it up:
+- `docker run`'s `--log-driver` option should default to `json-file`, but maybe check to make sure you're not passing ` -–log-driver syslog`
+- Add the following stanza to your config.json:
+  ```
+  "TailDockerJsonFiles": {
+    "SecondsBetweenPollForNewContainers": 60,
+    "InfluxDb": {
+      "Hostname": "127.0.0.1",
+      "Port": "8086",
+      "DatabaseName": "mydb",
+      "MeasurementName": "docker_logs"
+    }
+  },
+  ```
+
+If a log line appears to match Apache combined-log output, it will be parsed into separate fields.
+
+### Poll Monitis results
+
+Monitis is a third-party service to regularly send HTTP requests to your web site to see if it's still up.
+Besides alerting you if your site is down, they'll log how long your web site took to respond.
+`sync-log-files-to-db` lets you collect these logs without having to manually login to the Monitis dashboard and export CSV files.
+
+How to set it up:
+- Login to Monitis dashboard
+- Create external monitors if you haven't already
+- Go to Tools -> API -> API Key to look up your API key and Secret key
+- Add the following stanza to your config.json:
+  ```
+  "PollMonitisResults": {
+    "ApiKey": "YOUR-MONITIS-API-KEY-HERE",
+    "SecretKey": "YOUR-MONITIS-SECRET-KEY-HERE",
+    "InfluxDb": {
+      "Hostname": "127.0.0.1",
+      "Port": "8086",
+      "DatabaseName": "mydb",
+      "MeasurementName": "monitis_results"
+    }
+  }
+  ```
+
+### Poll S3 for CloudTrail logs
+
+If you enable AWS CloudTrail, AWS will log every AWS API call to a S3 bucket of your choice.
+
+How to set it up:
+- Go to AWS dashboard for CloudTrail, and create a "trail" with the following options:
+  - Encrypt log files = No (since `sync-log-files-to-db` doesn't know how to decrypt them)
+  - Enable log file validation = No (since `sync-log-files-to-db` won't bother to delete the checksum files, so they'll just accumulate)
+- Create an AWS S3 bucket for your CloudTrail logs
+- Create an AWS IAM user that has read and delete access to just that S3 bucket
+- Setup a `config/s3.creds.ini` file using `config/s3.creds.ini.sample` as a starting point
+- Add the following stanza to your config.json (omitting BigQuery or InfluxDb if you prefer):
+  ```
+  "PollS3CloudTrail": {
+    "S3": {
+      "CredsPath": "./s3.creds.ini",
+      "Region": "us-east-1",
+      "BucketName": "cloudtrail-danstutzman"
+    },
+    "PathsPerBatch": 100,
+
+    "BigQuery": {
+      "GcloudPemPath": "./YourProject-abc123.json",
+      "GcloudProjectId": "your-project",
+      "DatasetName": "cloudtrail",
+      "TableName": "cloudtrail_events"
+    },
+    "InfluxDb": {
+      "Hostname": "127.0.0.1",
+      "Port": "8086",
+      "DatabaseName": "mydb",
+      "MeasurementName": "cloudtrail_events"
+    }
+  },
+  ```
+
 ### Poll S3 for Beluga CDN logs
 
 BelugaCDN can [send their logs to an S3 bucket of your choice](https://docs.belugacdn.com/docs/real-time).
@@ -68,7 +149,7 @@ How to set it up:
     "InfluxDb": {
       "Hostname": "127.0.0.1",
       "Port": "8086",
-      "DatabaseName": "(choose an InfluxDB database name)",
+      "DatabaseName": "mydb",
       "MeasurementName": "belugacdn_logs"
     }
   }
