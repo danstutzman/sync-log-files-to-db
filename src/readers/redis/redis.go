@@ -19,7 +19,9 @@ var DOLLAR_INT_REGEXP = regexp.MustCompile("\\$([0-9]+)\r")
 var REDIS_KEY_NAME = "belugacdn"
 var ASCII_CR = byte(13)
 var ASCII_LF = byte(10)
-var INFLUXDB_TAGS_SET = map[string]bool{"image_name": true}
+var INFLUXDB_TAGS_SET = map[string]bool{
+	"host": true,
+}
 
 func awaitAuthCommand(reader *bufio.Reader, conn net.Conn, expectedPassword string) {
 	log.Infow("Awaiting AUTH command...")
