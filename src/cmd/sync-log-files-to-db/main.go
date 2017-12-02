@@ -9,6 +9,7 @@ import (
 
 	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 	"github.com/danielstutzman/sync-log-files-to-db/src/sources/docker"
+	"github.com/danielstutzman/sync-log-files-to-db/src/sources/monitis"
 	"github.com/danielstutzman/sync-log-files-to-db/src/sources/redis"
 	"github.com/danielstutzman/sync-log-files-to-db/src/sources/s3_belugacdn"
 	"github.com/danielstutzman/sync-log-files-to-db/src/sources/s3_cloudtrail"
@@ -21,6 +22,7 @@ type Config struct {
 	WatchS3BelugaCDN                  *s3_belugacdn.Options
 	WatchS3CloudTrail                 *s3_cloudtrail.Options
 	WatchSystemdLogs                  *systemd.Options
+	PollMonitisResults                *monitis.Options
 }
 
 func readConfig() (*Config, string) {
@@ -89,6 +91,15 @@ func main() {
 		go func() {
 			defer wg.Done()
 			systemd.StartTailingSystemdLogs(config.WatchSystemdLogs, configPath)
+		}()
+	}
+	if config.PollMonitisResults != nil {
+		monitis.ValidateOptions(config.PollMonitisResults)
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			monitis.PollMonitisForever(config.PollMonitisResults, configPath)
 		}()
 	}
 
