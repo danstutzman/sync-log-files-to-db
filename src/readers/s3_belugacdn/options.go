@@ -1,8 +1,8 @@
-package s3_cloudtrail
+package s3_belugacdn
 
 import (
 	"github.com/danielstutzman/sync-log-files-to-db/src/log"
-	"github.com/danielstutzman/sync-log-files-to-db/src/sources/s3"
+	"github.com/danielstutzman/sync-log-files-to-db/src/readers/s3"
 	"github.com/danielstutzman/sync-log-files-to-db/src/storage/bigquery"
 	"github.com/danielstutzman/sync-log-files-to-db/src/storage/influxdb"
 )
@@ -14,6 +14,7 @@ type Options struct {
 	BigQuery      *bigquery.Options
 	InfluxDb      *influxdb.Options
 	PathsPerBatch int
+	RunOnce       bool
 }
 
 func ValidateOptions(options *Options) {

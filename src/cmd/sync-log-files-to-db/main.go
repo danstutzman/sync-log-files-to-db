@@ -8,12 +8,12 @@ import (
 	"sync"
 
 	"github.com/danielstutzman/sync-log-files-to-db/src/log"
-	"github.com/danielstutzman/sync-log-files-to-db/src/sources/docker"
-	"github.com/danielstutzman/sync-log-files-to-db/src/sources/monitis"
-	"github.com/danielstutzman/sync-log-files-to-db/src/sources/redis"
-	"github.com/danielstutzman/sync-log-files-to-db/src/sources/s3_belugacdn"
-	"github.com/danielstutzman/sync-log-files-to-db/src/sources/s3_cloudtrail"
-	"github.com/danielstutzman/sync-log-files-to-db/src/sources/systemd"
+	"github.com/danielstutzman/sync-log-files-to-db/src/readers/docker"
+	"github.com/danielstutzman/sync-log-files-to-db/src/readers/monitis"
+	"github.com/danielstutzman/sync-log-files-to-db/src/readers/redis"
+	"github.com/danielstutzman/sync-log-files-to-db/src/readers/s3_belugacdn"
+	"github.com/danielstutzman/sync-log-files-to-db/src/readers/s3_cloudtrail"
+	"github.com/danielstutzman/sync-log-files-to-db/src/readers/systemd"
 )
 
 type Config struct {
