@@ -29,6 +29,12 @@ func (enc CustomEncoder) EncodeEntry(entry zapcore.Entry, fields []zapcore.Field
 	buf.AppendString(entry.Message)
 
 	for _, field := range fields {
+		// Fix zero times being incorrectly shown as
+		// 1754-08-30 22:43:41.128654848 +0000 UTC
+		if field.Type == zapcore.TimeType && field.Integer == -6795364578871345152 {
+			field.Integer = 0
+		}
+
 		field.AddTo(newEncoder)
 	}
 	for _, field := range fields {
