@@ -27,7 +27,7 @@ func init() {
 		panic(err)
 	}
 
-	sugar = logger.Sugar()
+	sugar = logger.WithOptions(zap.AddCallerSkip(1)).Sugar()
 }
 
 func Infow(msg string, keysAndValues ...interface{}) {

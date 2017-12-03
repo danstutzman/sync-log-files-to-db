@@ -6,7 +6,19 @@ import (
 
 	"go.uber.org/zap/buffer"
 	"go.uber.org/zap/zapcore"
+	"runtime"
 )
+
+var numBytesToShortenCaller int
+
+func init() {
+	// Example filename: /Users/dan/dev/gopath/src/github.com/danielstutzman/sync-log-files-to-db/src/log/encoder.go
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		panic("Can't get runtime.Caller(0)")
+	}
+	numBytesToShortenCaller = len(filename) - len("log/encoder.go")
+}
 
 type CustomEncoder struct {
 	*zapcore.MapObjectEncoder
@@ -24,7 +36,9 @@ func (enc CustomEncoder) EncodeEntry(entry zapcore.Entry, fields []zapcore.Field
 	buf := pool.Get()
 
 	secondsSinceStart := entry.Time.Sub(enc.startingTime).Seconds()
-	buf.AppendString(fmt.Sprintf("%5.1f ", secondsSinceStart))
+	shortenedCaller := entry.Caller.String()[numBytesToShortenCaller:]
+	buf.AppendString(fmt.Sprintf("%5.1f %-5s %s ",
+		secondsSinceStart, entry.Level, shortenedCaller))
 
 	buf.AppendString(entry.Message)
 
