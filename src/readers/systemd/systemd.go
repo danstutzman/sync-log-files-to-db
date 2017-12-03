@@ -51,11 +51,14 @@ func startTailingSystemdLog(influxdbConn *influxdb.InfluxdbConnection,
 
 	args := []string{
 		"/usr/bin/journalctl",
-		"--since=" + lastTimestamp.Format(JOURNALCTL_TIME_FORMAT),
 		"--follow",
 		"--no-pager",
 		"--no-tail",
 		"--output=short-unix",
+	}
+	if !lastTimestamp.IsZero() {
+		args = append(args,
+			"--since="+lastTimestamp.Format(JOURNALCTL_TIME_FORMAT))
 	}
 	log.Infow("Tailing logs...", "after", lastTimestamp, "args", args)
 
