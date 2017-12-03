@@ -1,7 +1,7 @@
 #!/bin/bash -ex
 
 USERNAME=root
-HOSTNAME=207.246.91.97
+HOSTNAME=belugacdn-logs.danstutzman.com
 TARGET_PATH=/root/gopath/src/github.com/danielstutzman/sync-log-files-to-db/
 SSH_KEY=/Users/dan/.ssh/vultr
 
