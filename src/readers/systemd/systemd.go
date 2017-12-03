@@ -75,10 +75,14 @@ func startTailingSystemdLog(influxdbConn *influxdb.InfluxdbConnection,
 
 	go tailSystemdLog(stdout, influxdbConn, logLinesChan)
 
-	err = command.Wait()
+	stderrOut, err := ioutil.ReadAll(stderr)
 	if err != nil {
-		stderrOut, err := ioutil.ReadAll(stderr)
-		log.Fatalw("Error from tail", "err", err, "stderr", stderrOut)
+		log.Fatalw("Error from ReadAll", "err", err)
+	}
+
+	err2 := command.Wait()
+	if err2 != nil {
+		log.Fatalw("Error from Wait", "err", err, "stderr", string(stderrOut))
 	}
 
 }
