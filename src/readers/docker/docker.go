@@ -12,7 +12,7 @@ import (
 	"github.com/moby/moby/client"
 )
 
-const MAX_INFLUXDB_INSERT_BATCH_SIZE = 100
+const MAX_INFLUXDB_INSERT_BATCH_SIZE = 20000
 
 var TAIL_LOG_LINE_FLUSH_TIMEOUT = time.Second
 var INFLUXDB_TAGS_SET = map[string]bool{

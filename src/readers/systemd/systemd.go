@@ -14,7 +14,7 @@ import (
 	"github.com/danielstutzman/sync-log-files-to-db/src/writers/influxdb"
 )
 
-const MAX_INFLUXDB_INSERT_BATCH_SIZE = 100
+const MAX_INFLUXDB_INSERT_BATCH_SIZE = 20000
 const JOURNALCTL_TIME_FORMAT = "2006-01-02 15:04:05.999999999"
 const JOURNALCTL_LOGS_PRELUDE = "-- Logs begin at "
 const JOURNALCTL_LOGS_REBOOT = "-- Reboot --"
