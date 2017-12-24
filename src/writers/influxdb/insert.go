@@ -39,6 +39,26 @@ func (conn *InfluxdbConnection) InsertMaps(tagsSet map[string]bool,
 		points.AddPoint(point)
 	}
 
+	if false {
+		var earliestTime time.Time
+		var latestTime time.Time
+		for _, m := range maps {
+			timestamp := m["timestamp"].(time.Time)
+			if earliestTime.IsZero() || earliestTime.After(timestamp) {
+				earliestTime = timestamp
+			}
+			if timestamp.After(latestTime) {
+				latestTime = timestamp
+			}
+		}
+
+		log.Infow("Inserted Influx DB points",
+			"measurement_name", conn.measurementName,
+			"num_points", len(points.Points()),
+			"earliest", earliestTime,
+			"latest", latestTime)
+	}
+
 	if err := conn.client.Write(points); err != nil {
 		log.Fatalw("Error from Write", "err", err)
 	}
