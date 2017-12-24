@@ -12,6 +12,7 @@ import (
 
 	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 	"github.com/danielstutzman/sync-log-files-to-db/src/writers/influxdb"
+	"github.com/danielstutzman/sync-log-files-to-db/src/writers/postgres"
 )
 
 var gotAuth = false
@@ -38,7 +39,9 @@ func awaitAuthCommand(reader *bufio.Reader, conn net.Conn, expectedPassword stri
 }
 
 func awaitLpushCommand(reader *bufio.Reader, conn net.Conn,
-	influxdbConn *influxdb.InfluxdbConnection, config *Options) {
+	influxdbConn *influxdb.InfluxdbConnection,
+	postgresConn *postgres.PostgresConnection,
+	config *Options) {
 
 	log.Infow("Awaiting LPUSH command...")
 	expect(reader, "*3")                                    // LPUSH command has 3 parts
@@ -100,7 +103,12 @@ func awaitLpushCommand(reader *bufio.Reader, conn net.Conn,
 		}
 	}
 
-	influxdbConn.InsertMaps(INFLUXDB_TAGS_SET, []map[string]interface{}{map2})
+	if influxdbConn != nil {
+		influxdbConn.InsertMaps(INFLUXDB_TAGS_SET, []map[string]interface{}{map2})
+	}
+	if postgresConn != nil {
+		postgresConn.InsertMaps([]map[string]interface{}{map2})
+	}
 
 	_, err = conn.Write([]byte(":1\r\n")) // say the length of the list is 1 long
 	if err != nil {
@@ -117,7 +125,10 @@ func parseLogJson(logJson []byte) map[string]interface{} {
 	return *parsed
 }
 
-func handleConnection(conn net.Conn, config *Options, influxdbConn *influxdb.InfluxdbConnection) {
+func handleConnection(conn net.Conn, config *Options,
+	influxdbConn *influxdb.InfluxdbConnection,
+	postgresConn *postgres.PostgresConnection) {
+
 	log.Infow("Handling new connection...")
 
 	// Close connection when this function ends
@@ -136,7 +147,7 @@ func handleConnection(conn net.Conn, config *Options, influxdbConn *influxdb.Inf
 	awaitAuthCommand(reader, conn, config.ExpectedPassword)
 
 	for {
-		awaitLpushCommand(reader, conn, influxdbConn, config)
+		awaitLpushCommand(reader, conn, influxdbConn, postgresConn, config)
 	}
 }
 
@@ -167,7 +178,10 @@ func expectDollarInt(reader *bufio.Reader) int {
 	return i
 }
 
-func startRedisListener(config *Options, influxdbConn *influxdb.InfluxdbConnection) {
+func startRedisListener(config *Options,
+	influxdbConn *influxdb.InfluxdbConnection,
+	postgresConn *postgres.PostgresConnection) {
+
 	listener, err := net.Listen("tcp", ":"+config.ListenPort)
 	if err != nil {
 		log.Fatalw("Error from Listen", "err", err)
@@ -184,17 +198,22 @@ func startRedisListener(config *Options, influxdbConn *influxdb.InfluxdbConnecti
 		if err != nil {
 			log.Fatalw("Error from Accept", "err", err)
 		}
-		go handleConnection(conn, config, influxdbConn)
+		go handleConnection(conn, config, influxdbConn, postgresConn)
 	}
 }
 
 func ListenForever(config *Options, configPath string) {
 	var influxdbConn *influxdb.InfluxdbConnection
 	if config.InfluxDb != nil {
-		influxdb.ValidateOptions(config.InfluxDb)
 		influxdbConn = influxdb.NewInfluxdbConnection(config.InfluxDb, configPath)
+		influxdbConn.CreateDatabase()
 	}
-	influxdbConn.CreateDatabase()
 
-	startRedisListener(config, influxdbConn)
+	var postgresConn *postgres.PostgresConnection
+	if config.Postgresql != nil {
+		postgresConn = postgres.NewPostgresConnection(config.Postgresql, configPath)
+		postgresConn.CreateBelugacdnLogsTable()
+	}
+
+	startRedisListener(config, influxdbConn, postgresConn)
 }
