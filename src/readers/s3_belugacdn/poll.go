@@ -3,6 +3,8 @@ package s3_belugacdn
 import (
 	"time"
 
+	"github.com/danielstutzman/sync-log-files-to-db/src/writers/postgres"
+
 	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 	"github.com/danielstutzman/sync-log-files-to-db/src/readers/s3"
 	"github.com/danielstutzman/sync-log-files-to-db/src/writers/bigquery"
@@ -27,6 +29,12 @@ func PollForever(opts *Options, configPath string) {
 		influxdbConn.CreateDatabase()
 	}
 
+	var postgresConn *postgres.PostgresConnection
+	if opts.Postgresql != nil {
+		postgresConn = postgres.NewPostgresConnection(opts.Postgresql, configPath)
+		postgresConn.CreateBelugacdnLogsTable()
+	}
+
 	for {
 		visits := []map[string]interface{}{}
 		s3Paths := s3Conn.ListPaths("", int64(opts.PathsPerBatch))
@@ -41,6 +49,9 @@ func PollForever(opts *Options, configPath string) {
 			}
 			if influxdbConn != nil {
 				influxdbConn.InsertMaps(VISITS_TAG_SET, visits)
+			}
+			if postgresConn != nil {
+				postgresConn.InsertMaps(visits)
 			}
 		}
 		for _, s3Path := range s3Paths {
