@@ -242,6 +242,13 @@
 			"revisionTime": "2016-08-03T19:07:31Z"
 		},
 		{
+			"checksumSHA1": "aKDkPbuL3zTSzsPX5vhxFnF2E2c=",
+			"path": "github.com/lib/pq",
+			"revision": "83612a56d3dd153a94a629cd64925371c9adad78",
+			"revisionTime": "2017-11-26T05:04:59Z",
+			"tree": true
+		},
+		{
 			"checksumSHA1": "USrPIXfba7TIyuZNv6gAQi8+Siw=",
 			"path": "github.com/moby/moby/client",
 			"revision": "a4bdb304e29f21661e8ef398dbaeb8188aa0f46a",
