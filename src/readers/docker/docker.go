@@ -25,7 +25,8 @@ func tailContainer(container *types.Container,
 	influxdbConn *influxdb.InfluxdbConnection, client *client.Client,
 	logLinesChan chan<- LogLine) {
 
-	lastTimestamp := influxdbConn.QueryForLastTimestampForTag("container_id", container.ID)
+	lastTimestamp := influxdbConn.QueryForLastTimestampForTag(
+		"message", "image_name", container.Image)
 	justAfterLastTimestamp := lastTimestamp.Add(time.Nanosecond)
 
 	log.Infow("Tailing logs...", "container_id", container.ID[:10],

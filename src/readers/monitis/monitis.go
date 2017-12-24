@@ -45,7 +45,8 @@ func PollMonitisForever(config *Options, configPath string) {
 func pollMonitisMonitorForever(monitor *monitis.ExternalMonitor,
 	auth *monitis.Auth, influxdbConn *influxdb.InfluxdbConnection) {
 
-	retrieveDate := midnightBefore(influxdbConn.QueryForLastTimestampForTag("monitor_name", monitor.Name))
+	retrieveDate := midnightBefore(influxdbConn.QueryForLastTimestampForTag(
+		"response_millis", "monitor_name", monitor.Name))
 	log.Infow("Most recent timestamp", "timestamp", retrieveDate, "monitor_name", monitor.Name)
 	if retrieveDate.IsZero() {
 		// Since there's no existing data in InfluxDB,

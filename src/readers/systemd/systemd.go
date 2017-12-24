@@ -47,7 +47,7 @@ func StartTailingSystemdLogs(config *Options, configPath string) {
 func startTailingSystemdLog(influxdbConn *influxdb.InfluxdbConnection,
 	logLinesChan chan<- LogLine) {
 
-	lastTimestamp := influxdbConn.QueryForLastTimestamp()
+	lastTimestamp := influxdbConn.QueryForLastTimestamp("message")
 
 	args := []string{
 		"/usr/bin/journalctl",
