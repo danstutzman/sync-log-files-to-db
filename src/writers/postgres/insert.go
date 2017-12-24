@@ -8,7 +8,7 @@ import (
 	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 )
 
-func quoteString(input string) string {
+func QuoteString(input string) string {
 	return fmt.Sprintf("'%s'", strings.Replace(input, "'", "\\'", -1))
 }
 
@@ -34,9 +34,15 @@ func (conn *PostgresConnection) InsertMaps(maps []map[string]interface{}) {
 			} else if valueFloat, ok := value.(float64); ok {
 				values = append(values, fmt.Sprintf("%f", valueFloat))
 			} else if valueString, ok := value.(string); ok {
-				values = append(values, quoteString(valueString))
+				values = append(values, QuoteString(valueString))
 			} else if valueInt, ok := value.(int64); ok {
 				values = append(values, fmt.Sprintf("%d", valueInt))
+			} else if valueBool, ok := value.(bool); ok {
+				if valueBool {
+					values = append(values, "'t'")
+				} else {
+					values = append(values, "'f'")
+				}
 			} else {
 				log.Fatalw("Unexpected type for key", "key", key,
 					"value", value, "type", fmt.Sprintf("%T", value))

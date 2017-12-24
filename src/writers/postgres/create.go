@@ -36,3 +36,27 @@ func (conn *PostgresConnection) CreateBelugacdnLogsTable() {
 		log.Fatalw("Error from db.Exec", "sql", command, "err", err)
 	}
 }
+
+func (conn *PostgresConnection) CreateMonitisResultsTable() {
+	command1 := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
+		time               TIMESTAMP NOT NULL,
+		monitor_name       TEXT NOT NULL,
+		location_name      TEXT NOT NULL,
+		response_millis    INT NOT NULL,
+		was_okay           BOOL NOT NULL
+	)`, conn.tableName)
+
+	_, err := conn.db.Exec(command1)
+	if err != nil {
+		log.Fatalw("Error from db.Exec", "sql", command1, "err", err)
+	}
+
+	command2 := fmt.Sprintf(`CREATE INDEX IF NOT EXISTS
+		idx_%s_time_monitor_name_location_name
+		ON %s(monitor_name, location_name, time)`,
+		conn.tableName, conn.tableName)
+	_, err = conn.db.Exec(command2)
+	if err != nil {
+		log.Fatalw("Error from db.Exec", "sql", command2, "err", err)
+	}
+}

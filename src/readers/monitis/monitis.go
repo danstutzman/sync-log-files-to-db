@@ -1,6 +1,7 @@
 package monitis
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/danielstutzman/go-monitis"
 	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 	"github.com/danielstutzman/sync-log-files-to-db/src/writers/influxdb"
+	"github.com/danielstutzman/sync-log-files-to-db/src/writers/postgres"
 )
 
 var INFLUXDB_TAGS_SET = map[string]bool{
@@ -22,6 +24,12 @@ func PollMonitisForever(config *Options, configPath string) {
 		influxdbConn.CreateDatabase()
 	}
 
+	var postgresConn *postgres.PostgresConnection
+	if config.Postgresql != nil {
+		postgresConn = postgres.NewPostgresConnection(config.Postgresql, configPath)
+		postgresConn.CreateMonitisResultsTable()
+	}
+
 	auth, err := monitis.GetAuthToken(config.ApiKey, config.SecretKey)
 	if err != nil {
 		log.Fatalw("Error from GetAuthToken", "err", err)
@@ -34,7 +42,7 @@ func PollMonitisForever(config *Options, configPath string) {
 
 	for _, monitor := range monitors {
 		go func(monitorCopy monitis.ExternalMonitor) {
-			pollMonitisMonitorForever(&monitorCopy, auth, influxdbConn)
+			pollMonitisMonitorForever(&monitorCopy, auth, influxdbConn, postgresConn)
 		}(monitor)
 	}
 	if len(monitors) > 0 {
@@ -43,13 +51,39 @@ func PollMonitisForever(config *Options, configPath string) {
 }
 
 func pollMonitisMonitorForever(monitor *monitis.ExternalMonitor,
-	auth *monitis.Auth, influxdbConn *influxdb.InfluxdbConnection) {
+	auth *monitis.Auth,
+	influxdbConn *influxdb.InfluxdbConnection,
+	postgresConn *postgres.PostgresConnection) {
 
-	retrieveDate := midnightBefore(influxdbConn.QueryForLastTimestampForTag(
-		"response_millis", "monitor_name", monitor.Name))
-	log.Infow("Most recent timestamp", "timestamp", retrieveDate, "monitor_name", monitor.Name)
-	if retrieveDate.IsZero() {
-		// Since there's no existing data in InfluxDB,
+	var earliestInfluxDate time.Time
+	if influxdbConn != nil {
+		earliestInfluxDate = midnightBefore(influxdbConn.QueryForLastTimestampForTag(
+			"response_millis", "monitor_name", monitor.Name))
+		log.Infow("Most recent timestamp in InfluxDB",
+			"timestamp", earliestInfluxDate, "monitor_name", monitor.Name)
+	}
+
+	var earliestPostgresDate time.Time
+	if postgresConn != nil {
+		earliestPostgresDate = postgresConn.QueryForLastTimestamp(
+			fmt.Sprintf("monitor_name = %s", postgres.QuoteString(monitor.Name)))
+		log.Infow("Most recent timestamp in Postgresql",
+			"timestamp", earliestPostgresDate, "monitor_name", monitor.Name)
+	}
+
+	var retrieveDate time.Time
+	if !earliestInfluxDate.IsZero() && !earliestPostgresDate.IsZero() {
+		if earliestInfluxDate.Before(earliestPostgresDate) {
+			retrieveDate = earliestPostgresDate
+		} else {
+			retrieveDate = earliestInfluxDate
+		}
+	} else if !earliestInfluxDate.IsZero() {
+		retrieveDate = earliestInfluxDate
+	} else if !earliestPostgresDate.IsZero() {
+		retrieveDate = earliestPostgresDate
+	} else {
+		// Since there's no existing data in InfluxDB/Postgresql,
 		// find out the monitor's start date and start scraping from then
 		info, err := auth.GetExternalMonitorInfo(strconv.Itoa(monitor.Id), nil)
 		if err != nil {
@@ -100,7 +134,12 @@ func pollMonitisMonitorForever(monitor *monitis.ExternalMonitor,
 		}
 
 		if len(maps) > 0 {
-			influxdbConn.InsertMaps(INFLUXDB_TAGS_SET, maps)
+			if influxdbConn != nil {
+				influxdbConn.InsertMaps(INFLUXDB_TAGS_SET, maps)
+			}
+			if postgresConn != nil {
+				postgresConn.InsertMaps(maps)
+			}
 		}
 
 		if retrieveDate.Before(midnightBefore(time.Now().UTC())) {
