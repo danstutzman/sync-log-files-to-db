@@ -54,7 +54,7 @@ func main() {
 		log.Printf("New monitor: %+v", monitor)
 	}
 
-	if false {
+	if true {
 		monitors, err := auth.GetExternalMonitors()
 		if err != nil {
 			log.Fatalf("Error from GetExternalMonitors: %s", err)
@@ -91,7 +91,7 @@ func main() {
 		log.Printf("Locations: %+v", locations)
 	}
 
-	if false {
+	if true {
 		testId := "917942"
 		info, err := auth.GetExternalMonitorInfo(testId, nil)
 		if err != nil {

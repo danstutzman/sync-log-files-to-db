@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -121,7 +120,6 @@ func (auth *Auth) EditExternalMonitor(testId string,
 	opts *EditExternalMonitorOptions) error {
 
 	form := optsToForm(opts)
-	log.Printf("Encoded: %s", form.Encode())
 
 	form.Add("action", "editExternalMonitor")
 	form.Add("testId", testId)

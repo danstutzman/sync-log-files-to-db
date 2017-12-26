@@ -64,8 +64,6 @@ type GetExternalMonitorInfoOutput struct {
 	IsSuspended bool `json:"isSuspended"`
 
 	IsPhmon bool `json:"isPhmon"`
-
-	Interval int `json:"interval"`
 }
 
 type OutputLocation struct {

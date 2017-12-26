@@ -42,10 +42,10 @@
 			"tree": true
 		},
 		{
-			"checksumSHA1": "heOzHsK8A9XL12ljKAv6oPYnLa0=",
+			"checksumSHA1": "jad1JEdgx+p8BR80+9INinv7RYQ=",
 			"path": "github.com/danielstutzman/go-monitis",
-			"revision": "f5d7ad4af60bee1dbae62b94c40fd2f4d56d7278",
-			"revisionTime": "2017-12-02T18:37:41Z",
+			"revision": "0cd567551cb91eba5f0ef97130d697146c559705",
+			"revisionTime": "2017-12-26T21:31:11Z",
 			"tree": true
 		},
 		{

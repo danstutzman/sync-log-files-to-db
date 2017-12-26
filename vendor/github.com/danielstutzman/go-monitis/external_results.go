@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 )
@@ -67,7 +66,6 @@ func (auth *Auth) GetExternalResults(testId string,
 	client := &http.Client{}
 
 	form := optsToForm(opts)
-	log.Printf("Encoded: %s", form.Encode())
 
 	form.Add("action", "testresult")
 	form.Add("testId", testId)
