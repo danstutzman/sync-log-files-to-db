@@ -10,11 +10,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/danielstutzman/sync-log-files-to-db/src/writers/postgres"
+
 	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 	"github.com/danielstutzman/sync-log-files-to-db/src/writers/influxdb"
 )
 
-const MAX_INFLUXDB_INSERT_BATCH_SIZE = 20000
+const MAX_INSERT_BATCH_SIZE = 1000
 const JOURNALCTL_TIME_FORMAT = "2006-01-02 15:04:05.999999999"
 const JOURNALCTL_LOGS_PRELUDE = "-- Logs begin at "
 const JOURNALCTL_LOGS_REBOOT = "-- Reboot --"
@@ -35,19 +37,39 @@ type LogLine struct {
 
 func StartTailingSystemdLogs(config *Options, configPath string) {
 	var influxdbConn *influxdb.InfluxdbConnection
-	influxdb.ValidateOptions(config.InfluxDb)
-	influxdbConn = influxdb.NewInfluxdbConnection(config.InfluxDb, configPath)
-	influxdbConn.CreateDatabase()
+	if config.InfluxDb != nil {
+		influxdbConn = influxdb.NewInfluxdbConnection(config.InfluxDb, configPath)
+		influxdbConn.CreateDatabase()
+	}
+
+	var postgresConn *postgres.PostgresConnection
+	if config.Postgresql != nil {
+		postgresConn = postgres.NewPostgresConnection(config.Postgresql, configPath)
+		postgresConn.CreateTable()
+	}
 
 	logLinesChan := make(chan LogLine)
-	go startTailingSystemdLog(influxdbConn, logLinesChan)
-	syncToInfluxdbForever(logLinesChan, influxdbConn, config.UnitNames)
+	go startTailingSystemdLog(influxdbConn, postgresConn, logLinesChan)
+	syncToDbForever(logLinesChan, influxdbConn, postgresConn, config.UnitNames)
 }
 
 func startTailingSystemdLog(influxdbConn *influxdb.InfluxdbConnection,
+	postgresConn *postgres.PostgresConnection,
 	logLinesChan chan<- LogLine) {
 
-	lastTimestamp := influxdbConn.QueryForLastTimestamp("message")
+	var lastTimestamp time.Time
+	if influxdbConn != nil {
+		influxdbTimestamp := influxdbConn.QueryForLastTimestamp("message")
+		if lastTimestamp.IsZero() || lastTimestamp.After(influxdbTimestamp) {
+			lastTimestamp = influxdbTimestamp
+		}
+	}
+	if postgresConn != nil {
+		postgresTimestamp := postgresConn.QueryForLastTimestamp("1=1")
+		if lastTimestamp.IsZero() || lastTimestamp.After(postgresTimestamp) {
+			lastTimestamp = postgresTimestamp
+		}
+	}
 
 	args := []string{
 		"/usr/bin/journalctl",
@@ -76,7 +98,7 @@ func startTailingSystemdLog(influxdbConn *influxdb.InfluxdbConnection,
 		log.Fatalw("Error from Start", "err", err)
 	}
 
-	go tailSystemdLog(stdout, influxdbConn, logLinesChan)
+	go tailSystemdLog(stdout, influxdbConn, postgresConn, logLinesChan)
 
 	stderrOut, err := ioutil.ReadAll(stderr)
 	if err != nil {
@@ -92,6 +114,7 @@ func startTailingSystemdLog(influxdbConn *influxdb.InfluxdbConnection,
 
 func tailSystemdLog(stdout io.Reader,
 	influxdbConn *influxdb.InfluxdbConnection,
+	postgresConn *postgres.PostgresConnection,
 	logLinesChan chan<- LogLine) {
 
 	scanner := bufio.NewScanner(stdout)
@@ -127,16 +150,23 @@ func tailSystemdLog(stdout io.Reader,
 	}
 }
 
-func syncToInfluxdbForever(logLinesChan <-chan LogLine,
-	influxdbConn *influxdb.InfluxdbConnection, unitNames []string) {
+func syncToDbForever(logLinesChan <-chan LogLine,
+	influxdbConn *influxdb.InfluxdbConnection,
+	postgresConn *postgres.PostgresConnection,
+	unitNames []string) {
 
 	maps := []map[string]interface{}{}
 	for {
 		if len(maps) == 0 {
 			logLine := <-logLinesChan
 			maps = appendLogLineToMaps(logLine, maps, unitNames)
-		} else if len(maps) >= MAX_INFLUXDB_INSERT_BATCH_SIZE {
-			influxdbConn.InsertMaps(INFLUXDB_TAGS_SET, maps)
+		} else if len(maps) >= MAX_INSERT_BATCH_SIZE {
+			if influxdbConn != nil {
+				influxdbConn.InsertMaps(INFLUXDB_TAGS_SET, maps)
+			}
+			if postgresConn != nil {
+				postgresConn.InsertMaps(maps)
+			}
 			maps = []map[string]interface{}{}
 		} else {
 			select {
@@ -144,7 +174,12 @@ func syncToInfluxdbForever(logLinesChan <-chan LogLine,
 				maps = appendLogLineToMaps(logLine, maps, unitNames)
 			case <-time.After(TAIL_LOG_LINE_FLUSH_TIMEOUT):
 				// No new logs after timeout, so inserting
-				influxdbConn.InsertMaps(INFLUXDB_TAGS_SET, maps)
+				if influxdbConn != nil {
+					influxdbConn.InsertMaps(INFLUXDB_TAGS_SET, maps)
+				}
+				if postgresConn != nil {
+					postgresConn.InsertMaps(maps)
+				}
 				maps = []map[string]interface{}{}
 			}
 		}

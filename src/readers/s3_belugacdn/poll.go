@@ -32,7 +32,7 @@ func PollForever(opts *Options, configPath string) {
 	var postgresConn *postgres.PostgresConnection
 	if opts.Postgresql != nil {
 		postgresConn = postgres.NewPostgresConnection(opts.Postgresql, configPath)
-		postgresConn.CreateBelugacdnLogsTable()
+		postgresConn.CreateTable()
 	}
 
 	for {

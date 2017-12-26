@@ -212,7 +212,7 @@ func ListenForever(config *Options, configPath string) {
 	var postgresConn *postgres.PostgresConnection
 	if config.Postgresql != nil {
 		postgresConn = postgres.NewPostgresConnection(config.Postgresql, configPath)
-		postgresConn.CreateBelugacdnLogsTable()
+		postgresConn.CreateTable()
 	}
 
 	startRedisListener(config, influxdbConn, postgresConn)

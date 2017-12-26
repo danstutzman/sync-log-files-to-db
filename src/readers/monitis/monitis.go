@@ -27,7 +27,7 @@ func PollMonitisForever(config *Options, configPath string) {
 	var postgresConn *postgres.PostgresConnection
 	if config.Postgresql != nil {
 		postgresConn = postgres.NewPostgresConnection(config.Postgresql, configPath)
-		postgresConn.CreateMonitisResultsTable()
+		postgresConn.CreateTable()
 	}
 
 	auth, err := monitis.GetAuthToken(config.ApiKey, config.SecretKey)
