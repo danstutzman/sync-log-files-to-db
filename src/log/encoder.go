@@ -62,6 +62,11 @@ func (enc CustomEncoder) EncodeEntry(entry zapcore.Entry, fields []zapcore.Field
 
 	buf.AppendByte('\n')
 
+	if entry.Stack != "" {
+		buf.AppendString(entry.Stack)
+		buf.AppendByte('\n')
+	}
+
 	return buf, nil
 }
 
