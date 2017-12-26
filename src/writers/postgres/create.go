@@ -51,7 +51,7 @@ func (conn *PostgresConnection) CreateMonitisResultsTable() {
 		log.Fatalw("Error from db.Exec", "sql", command1, "err", err)
 	}
 
-	command2 := fmt.Sprintf(`CREATE INDEX IF NOT EXISTS
+	command2 := fmt.Sprintf(`CREATE UNIQUE INDEX IF NOT EXISTS
 		idx_%s_time_monitor_name_location_name
 		ON %s(monitor_name, location_name, time)`,
 		conn.tableName, conn.tableName)
