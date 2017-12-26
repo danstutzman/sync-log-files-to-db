@@ -17,3 +17,4 @@ To consolidate incoming logs into a single time-series database
 ## Writers (where `sync-log-files-to-db` can write logs to)
 * InfluxDB, a time-series database
 * Google BigQuery, a serverless "big data" column store, useful for long-term archiving and large queries
+* PostgreSQL database
