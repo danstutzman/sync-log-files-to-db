@@ -45,4 +45,5 @@ ssh -i $SSH_KEY $USERNAME@$HOSTNAME <<EOF
 
   ldd /root/gopath/bin/sync-log-files-to-db | grep -q "not a dynamic executable"
   git diff
+  systemctl restart sync-log-files-to-db.service || systemctl status sync-log-files-to-db.service --no-pager -l
 EOF
