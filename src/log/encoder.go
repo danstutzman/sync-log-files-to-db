@@ -2,11 +2,11 @@ package log
 
 import (
 	"fmt"
+	"runtime"
 	"time"
 
 	"go.uber.org/zap/buffer"
 	"go.uber.org/zap/zapcore"
-	"runtime"
 )
 
 var numBytesToShortenCaller int
