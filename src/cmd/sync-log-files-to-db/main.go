@@ -17,6 +17,7 @@ import (
 )
 
 type Config struct {
+	LogStyle                          string
 	ListenOnFakeRedisForBelugaCDNLogs *redis.Options
 	TailDockerJsonFiles               *docker.Options
 	PollS3BelugaCDN                   *s3_belugacdn.Options
@@ -46,6 +47,8 @@ func readConfig() (*Config, string) {
 
 func main() {
 	config, configPath := readConfig()
+
+	log.Init(config.LogStyle)
 
 	var wg sync.WaitGroup
 	if config.ListenOnFakeRedisForBelugaCDNLogs != nil {

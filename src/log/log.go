@@ -1,6 +1,8 @@
 package log
 
 import (
+	"fmt"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/buffer"
 )
@@ -8,23 +10,35 @@ import (
 var sugar *zap.SugaredLogger
 var pool = buffer.NewPool()
 
-func init() {
-	err := zap.RegisterEncoder("custom", constructEncoder)
-	if err != nil {
-		panic(err)
-	}
+func Init(logStyle string) {
+	var logger *zap.Logger
+	var err error
+	switch logStyle {
+	case "development":
+		err = zap.RegisterEncoder("custom", constructEncoder)
+		if err != nil {
+			panic(err)
+		}
 
-	config := zap.Config{
-		Level:            zap.NewAtomicLevelAt(zap.DebugLevel),
-		Development:      true,
-		Encoding:         "custom",
-		OutputPaths:      []string{"stderr"},
-		ErrorOutputPaths: []string{"stderr"},
-	}
+		config := zap.Config{
+			Level:            zap.NewAtomicLevelAt(zap.DebugLevel),
+			Development:      true,
+			Encoding:         "custom",
+			OutputPaths:      []string{"stderr"},
+			ErrorOutputPaths: []string{"stderr"},
+		}
 
-	logger, err := config.Build()
-	if err != nil {
-		panic(err)
+		logger, err = config.Build()
+		if err != nil {
+			panic(err)
+		}
+	case "production":
+		logger, err = zap.NewProduction()
+		if err != nil {
+			panic(err)
+		}
+	default:
+		panic(fmt.Sprintf("Unknown logStyle '%s'", logStyle))
 	}
 
 	sugar = logger.WithOptions(zap.AddCallerSkip(1)).Sugar()
