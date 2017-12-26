@@ -3,7 +3,6 @@ package monitis
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -148,7 +147,6 @@ func (auth *Auth) AddExternalMonitor(
 	opts *AddExternalMonitorOptions) (*AddExternalMonitorOutputData, error) {
 
 	form := optsToForm(opts)
-	log.Printf("Encoded: %s", form.Encode())
 
 	form.Add("action", "addExternalMonitor")
 	form.Add("apikey", auth.ApiKey)
