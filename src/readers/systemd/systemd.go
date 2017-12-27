@@ -42,9 +42,9 @@ func StartTailingSystemdLogs(config *Options, configPath string) {
 		influxdbConn.CreateDatabase()
 	}
 
-	var postgresConn *postgres.PostgresConnection
+	var postgresConn *postgres.Connection
 	if config.Postgresql != nil {
-		postgresConn = postgres.NewPostgresConnection(config.Postgresql, configPath)
+		postgresConn = postgres.NewConnection(config.Postgresql, configPath)
 		postgresConn.CreateTable()
 	}
 
@@ -54,7 +54,7 @@ func StartTailingSystemdLogs(config *Options, configPath string) {
 }
 
 func startTailingSystemdLog(influxdbConn *influxdb.Connection,
-	postgresConn *postgres.PostgresConnection,
+	postgresConn *postgres.Connection,
 	logLinesChan chan<- LogLine) {
 
 	var lastTimestamp time.Time
@@ -114,7 +114,7 @@ func startTailingSystemdLog(influxdbConn *influxdb.Connection,
 
 func tailSystemdLog(stdout io.Reader,
 	influxdbConn *influxdb.Connection,
-	postgresConn *postgres.PostgresConnection,
+	postgresConn *postgres.Connection,
 	logLinesChan chan<- LogLine) {
 
 	scanner := bufio.NewScanner(stdout)
@@ -152,7 +152,7 @@ func tailSystemdLog(stdout io.Reader,
 
 func syncToDbForever(logLinesChan <-chan LogLine,
 	influxdbConn *influxdb.Connection,
-	postgresConn *postgres.PostgresConnection,
+	postgresConn *postgres.Connection,
 	unitNames []string) {
 
 	maps := []map[string]interface{}{}

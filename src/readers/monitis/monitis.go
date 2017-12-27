@@ -24,9 +24,9 @@ func PollMonitisForever(config *Options, configPath string) {
 		influxdbConn.CreateDatabase()
 	}
 
-	var postgresConn *postgres.PostgresConnection
+	var postgresConn *postgres.Connection
 	if config.Postgresql != nil {
-		postgresConn = postgres.NewPostgresConnection(config.Postgresql, configPath)
+		postgresConn = postgres.NewConnection(config.Postgresql, configPath)
 		postgresConn.CreateTable()
 	}
 
@@ -53,7 +53,7 @@ func PollMonitisForever(config *Options, configPath string) {
 func pollMonitisMonitorForever(monitor *monitis.ExternalMonitor,
 	auth *monitis.Auth,
 	influxdbConn *influxdb.Connection,
-	postgresConn *postgres.PostgresConnection) {
+	postgresConn *postgres.Connection) {
 
 	var earliestInfluxDate time.Time
 	if influxdbConn != nil {

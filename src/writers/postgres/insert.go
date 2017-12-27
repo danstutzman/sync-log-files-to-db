@@ -19,7 +19,7 @@ func QuoteString(input string) string {
 	return "'" + input + "'"
 }
 
-func (conn *PostgresConnection) InsertMaps(maps []map[string]interface{}) {
+func (conn *Connection) InsertMaps(maps []map[string]interface{}) {
 	keys := []string{"time"}
 	for key := range maps[0] {
 		if key == "timestamp" {

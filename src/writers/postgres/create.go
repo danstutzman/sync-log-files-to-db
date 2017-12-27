@@ -6,7 +6,7 @@ import (
 	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 )
 
-func (conn *PostgresConnection) CreateTable() {
+func (conn *Connection) CreateTable() {
 	command1 := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
 		time TIMESTAMP WITH TIME ZONE NOT NULL
 	)`, conn.tableName)

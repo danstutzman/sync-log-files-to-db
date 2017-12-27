@@ -9,7 +9,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type PostgresConnection struct {
+type Connection struct {
 	db        *sql.DB
 	tableName string
 }
@@ -18,7 +18,7 @@ func escape(s string) string {
 	return strings.Replace(s, "'", "\\'", -1)
 }
 
-func NewPostgresConnection(opts *Options, configPath string) *PostgresConnection {
+func NewConnection(opts *Options, configPath string) *Connection {
 	parts := []string{
 		fmt.Sprintf("dbname='%s'", escape(opts.DatabaseName)),
 	}
@@ -43,7 +43,7 @@ func NewPostgresConnection(opts *Options, configPath string) *PostgresConnection
 		log.Fatalw("Error from sql.Open", "err", err)
 	}
 
-	return &PostgresConnection{
+	return &Connection{
 		db:        db,
 		tableName: opts.TableName,
 	}

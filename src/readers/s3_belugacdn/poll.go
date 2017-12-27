@@ -29,9 +29,9 @@ func PollForever(opts *Options, configPath string) {
 		influxdbConn.CreateDatabase()
 	}
 
-	var postgresConn *postgres.PostgresConnection
+	var postgresConn *postgres.Connection
 	if opts.Postgresql != nil {
-		postgresConn = postgres.NewPostgresConnection(opts.Postgresql, configPath)
+		postgresConn = postgres.NewConnection(opts.Postgresql, configPath)
 		postgresConn.CreateTable()
 	}
 

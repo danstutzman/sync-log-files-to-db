@@ -8,7 +8,7 @@ import (
 	"github.com/danielstutzman/sync-log-files-to-db/src/log"
 )
 
-func (conn *PostgresConnection) QueryForLastTimestamp(whereClause string) time.Time {
+func (conn *Connection) QueryForLastTimestamp(whereClause string) time.Time {
 	var maxTime *time.Time
 	query := fmt.Sprintf(
 		"SELECT MAX(time) AS max_time FROM %s WHERE %s", conn.tableName, whereClause)
