@@ -16,9 +16,9 @@ const SECONDS_BETWEEN_POLLS = 5 * 60
 func PollForever(opts *Options, configPath string) {
 	s3Conn := s3.NewS3Connection(opts.S3, configPath)
 
-	var bigqueryConn *bigquery.BigqueryConnection
+	var bigqueryConn *bigquery.Connection
 	if opts.BigQuery != nil {
-		bigqueryConn = bigquery.NewBigqueryConnection(opts.BigQuery, configPath)
+		bigqueryConn = bigquery.NewConnection(opts.BigQuery, configPath)
 		bigqueryConn.CreateDataset()
 		createTable(bigqueryConn)
 	}
@@ -64,7 +64,7 @@ func PollForever(opts *Options, configPath string) {
 	}
 }
 
-func createTable(bigqueryConn *bigquery.BigqueryConnection) {
+func createTable(bigqueryConn *bigquery.Connection) {
 	bigqueryConn.CreateTable([]*googleBigquery.TableFieldSchema{
 		{Name: "timestamp", Type: "TIMESTAMP", Mode: "REQUIRED"},
 		{Name: "eventType", Type: "STRING", Mode: "REQUIRED"},

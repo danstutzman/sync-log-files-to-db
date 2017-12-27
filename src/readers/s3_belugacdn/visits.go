@@ -89,7 +89,7 @@ func toFloat(key, value string) float64 {
 	return f
 }
 
-func createVisitsTable(bigqueryConn *bigquery.BigqueryConnection) {
+func createVisitsTable(bigqueryConn *bigquery.Connection) {
 	bigqueryConn.CreateTable([]*googleBigqueryPkg.TableFieldSchema{
 		{Name: "time", Type: "TIMESTAMP", Mode: "REQUIRED"},
 		{Name: "duration", Type: "FLOAT", Mode: "REQUIRED"},

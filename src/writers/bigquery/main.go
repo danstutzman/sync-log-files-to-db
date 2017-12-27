@@ -15,14 +15,14 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
-type BigqueryConnection struct {
+type Connection struct {
 	projectId   string
 	datasetName string
 	tableName   string
 	service     *bigquery.Service
 }
 
-func (conn *BigqueryConnection) DatasetName() string {
+func (conn *Connection) DatasetName() string {
 	return conn.datasetName
 }
 
@@ -42,7 +42,7 @@ func ParseFloat64(s string) float64 {
 	return f
 }
 
-func NewBigqueryConnection(opts *Options, configPath string) *BigqueryConnection {
+func NewConnection(opts *Options, configPath string) *Connection {
 	var service *bigquery.Service
 	var err error
 	if opts.Endpoint == "" {
@@ -72,7 +72,7 @@ func NewBigqueryConnection(opts *Options, configPath string) *BigqueryConnection
 		log.Infow("BasePath", "basePath", service.BasePath)
 	}
 
-	return &BigqueryConnection{
+	return &Connection{
 		projectId:   opts.GcloudProjectId,
 		datasetName: opts.DatasetName,
 		tableName:   opts.TableName,
@@ -80,7 +80,7 @@ func NewBigqueryConnection(opts *Options, configPath string) *BigqueryConnection
 	}
 }
 
-func (conn *BigqueryConnection) Query(sql, description string) []*bigquery.TableRow {
+func (conn *Connection) Query(sql, description string) []*bigquery.TableRow {
 	var response *bigquery.QueryResponse
 	var err error
 	err = backoff.Retry(func() error {
@@ -108,7 +108,7 @@ func (conn *BigqueryConnection) Query(sql, description string) []*bigquery.Table
 	return response.Rows
 }
 
-func (conn *BigqueryConnection) CreateDataset() {
+func (conn *Connection) CreateDataset() {
 	log.Infow("Creating dataset...", "datasetName", conn.datasetName)
 	_, err := conn.service.Datasets.Insert(conn.projectId, &bigquery.Dataset{
 		DatasetReference: &bigquery.DatasetReference{
@@ -128,7 +128,7 @@ func (conn *BigqueryConnection) CreateDataset() {
 	}
 }
 
-func (conn *BigqueryConnection) CreateTable(fields []*bigquery.TableFieldSchema) {
+func (conn *Connection) CreateTable(fields []*bigquery.TableFieldSchema) {
 
 	log.Infow("Creating table...", "tableName", conn.tableName)
 	_, err := conn.service.Tables.Insert(conn.projectId, conn.datasetName,
@@ -152,7 +152,7 @@ func (conn *BigqueryConnection) CreateTable(fields []*bigquery.TableFieldSchema)
 	}
 }
 
-func (conn *BigqueryConnection) InsertRows(
+func (conn *Connection) InsertRows(
 	maps []map[string]interface{}, uniqueColumnName string) {
 
 	var err error
