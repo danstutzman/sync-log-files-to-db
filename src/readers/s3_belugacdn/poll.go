@@ -23,9 +23,9 @@ func PollForever(opts *Options, configPath string) {
 		createVisitsTable(bigqueryConn)
 	}
 
-	var influxdbConn *influxdb.InfluxdbConnection
+	var influxdbConn *influxdb.Connection
 	if opts.InfluxDb != nil {
-		influxdbConn = influxdb.NewInfluxdbConnection(opts.InfluxDb, configPath)
+		influxdbConn = influxdb.NewConnection(opts.InfluxDb, configPath)
 		influxdbConn.CreateDatabase()
 	}
 

@@ -22,7 +22,7 @@ var INFLUXDB_TAGS_SET = map[string]bool{
 var LOGS_TIMEOUT = time.Duration(1 * time.Second)
 
 func tailContainer(container *types.Container,
-	influxdbConn *influxdb.InfluxdbConnection, client *client.Client,
+	influxdbConn *influxdb.Connection, client *client.Client,
 	logLinesChan chan<- LogLine) {
 
 	lastTimestamp := influxdbConn.QueryForLastTimestampForTag(
@@ -75,7 +75,7 @@ func tailContainer(container *types.Container,
 }
 
 func pollForNewContainersForever(client *client.Client,
-	influxdbConn *influxdb.InfluxdbConnection, logLinesChan chan<- LogLine,
+	influxdbConn *influxdb.Connection, logLinesChan chan<- LogLine,
 	config *Options) {
 
 	seenContainerIds := map[string]bool{}
@@ -99,7 +99,7 @@ func pollForNewContainersForever(client *client.Client,
 }
 
 func syncToInfluxdbForever(logLinesChan <-chan LogLine,
-	influxdbConn *influxdb.InfluxdbConnection) {
+	influxdbConn *influxdb.Connection) {
 
 	maps := []map[string]interface{}{}
 	for {
@@ -123,10 +123,10 @@ func syncToInfluxdbForever(logLinesChan <-chan LogLine,
 }
 
 func TailDockerLogsForever(config *Options, configPath string) {
-	var influxdbConn *influxdb.InfluxdbConnection
+	var influxdbConn *influxdb.Connection
 	if config.InfluxDb != nil {
 		influxdb.ValidateOptions(config.InfluxDb)
-		influxdbConn = influxdb.NewInfluxdbConnection(config.InfluxDb, configPath)
+		influxdbConn = influxdb.NewConnection(config.InfluxDb, configPath)
 	}
 	influxdbConn.CreateDatabase()
 

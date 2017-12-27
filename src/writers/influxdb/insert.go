@@ -7,7 +7,7 @@ import (
 	clientPkg "github.com/influxdata/influxdb/client/v2"
 )
 
-func (conn *InfluxdbConnection) InsertMaps(tagsSet map[string]bool,
+func (conn *Connection) InsertMaps(tagsSet map[string]bool,
 	maps []map[string]interface{}) {
 
 	// Create a batch

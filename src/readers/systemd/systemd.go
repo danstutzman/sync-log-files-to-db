@@ -36,9 +36,9 @@ type LogLine struct {
 }
 
 func StartTailingSystemdLogs(config *Options, configPath string) {
-	var influxdbConn *influxdb.InfluxdbConnection
+	var influxdbConn *influxdb.Connection
 	if config.InfluxDb != nil {
-		influxdbConn = influxdb.NewInfluxdbConnection(config.InfluxDb, configPath)
+		influxdbConn = influxdb.NewConnection(config.InfluxDb, configPath)
 		influxdbConn.CreateDatabase()
 	}
 
@@ -53,7 +53,7 @@ func StartTailingSystemdLogs(config *Options, configPath string) {
 	syncToDbForever(logLinesChan, influxdbConn, postgresConn, config.UnitNames)
 }
 
-func startTailingSystemdLog(influxdbConn *influxdb.InfluxdbConnection,
+func startTailingSystemdLog(influxdbConn *influxdb.Connection,
 	postgresConn *postgres.PostgresConnection,
 	logLinesChan chan<- LogLine) {
 
@@ -113,7 +113,7 @@ func startTailingSystemdLog(influxdbConn *influxdb.InfluxdbConnection,
 }
 
 func tailSystemdLog(stdout io.Reader,
-	influxdbConn *influxdb.InfluxdbConnection,
+	influxdbConn *influxdb.Connection,
 	postgresConn *postgres.PostgresConnection,
 	logLinesChan chan<- LogLine) {
 
@@ -151,7 +151,7 @@ func tailSystemdLog(stdout io.Reader,
 }
 
 func syncToDbForever(logLinesChan <-chan LogLine,
-	influxdbConn *influxdb.InfluxdbConnection,
+	influxdbConn *influxdb.Connection,
 	postgresConn *postgres.PostgresConnection,
 	unitNames []string) {
 

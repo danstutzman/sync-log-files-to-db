@@ -10,7 +10,7 @@ import (
 	clientPkg "github.com/influxdata/influxdb/client/v2"
 )
 
-func (conn *InfluxdbConnection) QueryForLastTimestampForTag(mainColumnName, tagName, tagValue string) time.Time {
+func (conn *Connection) QueryForLastTimestampForTag(mainColumnName, tagName, tagValue string) time.Time {
 	command := fmt.Sprintf(
 		"SELECT LAST(%s) FROM %s WHERE %s = '%s'",
 		mainColumnName,
@@ -20,13 +20,13 @@ func (conn *InfluxdbConnection) QueryForLastTimestampForTag(mainColumnName, tagN
 	return conn.queryForLastTimestamp(command)
 }
 
-func (conn *InfluxdbConnection) QueryForLastTimestamp(mainColumnName string) time.Time {
+func (conn *Connection) QueryForLastTimestamp(mainColumnName string) time.Time {
 	command := fmt.Sprintf("SELECT LAST(%s) FROM %s",
 		mainColumnName, conn.measurementName)
 	return conn.queryForLastTimestamp(command)
 }
 
-func (conn *InfluxdbConnection) queryForLastTimestamp(command string) time.Time {
+func (conn *Connection) queryForLastTimestamp(command string) time.Time {
 	log.Infow("queryForLastTimestamp", "query", command)
 
 	results, err := conn.query(command)
@@ -66,7 +66,7 @@ func (conn *InfluxdbConnection) queryForLastTimestamp(command string) time.Time 
 	return time.Time{} // zero value; this line is never reached
 }
 
-func (conn *InfluxdbConnection) query(command string) (result []clientPkg.Result, err error) {
+func (conn *Connection) query(command string) (result []clientPkg.Result, err error) {
 	q := clientPkg.Query{
 		Command:   command,
 		Database:  conn.databaseName,

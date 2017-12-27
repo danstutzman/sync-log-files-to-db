@@ -7,13 +7,13 @@ import (
 	clientPkg "github.com/influxdata/influxdb/client/v2"
 )
 
-type InfluxdbConnection struct {
+type Connection struct {
 	client          clientPkg.Client
 	databaseName    string
 	measurementName string
 }
 
-func NewInfluxdbConnection(opts *Options, configPath string) *InfluxdbConnection {
+func NewConnection(opts *Options, configPath string) *Connection {
 	client, err := clientPkg.NewHTTPClient(clientPkg.HTTPConfig{
 		Addr:     "http://" + opts.Hostname + ":" + opts.Port,
 		Username: opts.Username,
@@ -23,14 +23,14 @@ func NewInfluxdbConnection(opts *Options, configPath string) *InfluxdbConnection
 		log.Fatalw("Error from NewHTTPClient", "err", err)
 	}
 
-	return &InfluxdbConnection{
+	return &Connection{
 		client:          client,
 		databaseName:    opts.DatabaseName,
 		measurementName: opts.MeasurementName,
 	}
 }
 
-func (conn *InfluxdbConnection) CreateDatabase() {
+func (conn *Connection) CreateDatabase() {
 	log.Infow("Creating InfluxDB database...", "databaseName", conn.databaseName)
 	command := fmt.Sprintf("CREATE DATABASE %s", conn.databaseName)
 	_, err := conn.query(command)

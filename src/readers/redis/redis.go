@@ -39,7 +39,7 @@ func awaitAuthCommand(reader *bufio.Reader, conn net.Conn, expectedPassword stri
 }
 
 func awaitLpushCommand(reader *bufio.Reader, conn net.Conn,
-	influxdbConn *influxdb.InfluxdbConnection,
+	influxdbConn *influxdb.Connection,
 	postgresConn *postgres.PostgresConnection,
 	config *Options) {
 
@@ -126,7 +126,7 @@ func parseLogJson(logJson []byte) map[string]interface{} {
 }
 
 func handleConnection(conn net.Conn, config *Options,
-	influxdbConn *influxdb.InfluxdbConnection,
+	influxdbConn *influxdb.Connection,
 	postgresConn *postgres.PostgresConnection) {
 
 	log.Infow("Handling new connection...")
@@ -179,7 +179,7 @@ func expectDollarInt(reader *bufio.Reader) int {
 }
 
 func startRedisListener(config *Options,
-	influxdbConn *influxdb.InfluxdbConnection,
+	influxdbConn *influxdb.Connection,
 	postgresConn *postgres.PostgresConnection) {
 
 	listener, err := net.Listen("tcp", ":"+config.ListenPort)
@@ -203,9 +203,9 @@ func startRedisListener(config *Options,
 }
 
 func ListenForever(config *Options, configPath string) {
-	var influxdbConn *influxdb.InfluxdbConnection
+	var influxdbConn *influxdb.Connection
 	if config.InfluxDb != nil {
-		influxdbConn = influxdb.NewInfluxdbConnection(config.InfluxDb, configPath)
+		influxdbConn = influxdb.NewConnection(config.InfluxDb, configPath)
 		influxdbConn.CreateDatabase()
 	}
 

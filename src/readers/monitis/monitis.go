@@ -18,9 +18,9 @@ var INFLUXDB_TAGS_SET = map[string]bool{
 }
 
 func PollMonitisForever(config *Options, configPath string) {
-	var influxdbConn *influxdb.InfluxdbConnection
+	var influxdbConn *influxdb.Connection
 	if config.InfluxDb != nil {
-		influxdbConn = influxdb.NewInfluxdbConnection(config.InfluxDb, configPath)
+		influxdbConn = influxdb.NewConnection(config.InfluxDb, configPath)
 		influxdbConn.CreateDatabase()
 	}
 
@@ -52,7 +52,7 @@ func PollMonitisForever(config *Options, configPath string) {
 
 func pollMonitisMonitorForever(monitor *monitis.ExternalMonitor,
 	auth *monitis.Auth,
-	influxdbConn *influxdb.InfluxdbConnection,
+	influxdbConn *influxdb.Connection,
 	postgresConn *postgres.PostgresConnection) {
 
 	var earliestInfluxDate time.Time
